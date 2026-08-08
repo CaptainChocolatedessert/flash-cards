@@ -1,0 +1,140 @@
+/* Deliberately plain. This screen is scaffolding for build order step 2 — proving
+   that progress persists — and the game screens it will sit in front of are not
+   designed yet. Styling it properly now would be styling a guess. */
+
+:root {
+  color-scheme: light dark;
+  --edge: color-mix(in srgb, currentColor 20%, transparent);
+  --muted: color-mix(in srgb, currentColor 60%, transparent);
+  --raised: color-mix(in srgb, currentColor 6%, transparent);
+}
+
+body {
+  margin: 0;
+  font: 16px/1.6 system-ui, sans-serif;
+  padding: 2rem 1.25rem 4rem;
+}
+
+main {
+  max-width: 44rem;
+  margin: 0 auto;
+}
+
+h1 {
+  font-size: 1.75rem;
+  margin: 0 0 0.25rem;
+}
+
+h2 {
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.6;
+  margin: 2.5rem 0 0.75rem;
+}
+
+.lede {
+  margin: 0 0 1rem;
+  color: var(--muted);
+}
+
+.profiles {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.profile {
+  border: 1px solid var(--edge);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: var(--raised);
+}
+
+.profile[aria-current="true"] {
+  border-color: currentColor;
+}
+
+.profile-name {
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.profile-detail {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.profile-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 0.5rem;
+}
+
+form {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+input[type="text"] {
+  font: inherit;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--edge);
+  border-radius: 0.375rem;
+  background: transparent;
+  color: inherit;
+  min-width: 12rem;
+}
+
+button {
+  font: inherit;
+  padding: 0.4rem 0.9rem;
+  border: 1px solid var(--edge);
+  border-radius: 0.375rem;
+  background: var(--raised);
+  color: inherit;
+  cursor: pointer;
+}
+
+button:hover {
+  border-color: currentColor;
+}
+
+.row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.note {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin: 0.5rem 0 0;
+}
+
+.message {
+  margin: 1rem 0 0;
+  padding: 0.6rem 0.9rem;
+  border-radius: 0.375rem;
+  border: 1px solid var(--edge);
+}
+
+.message[data-tone="error"] {
+  border-color: color-mix(in srgb, red 50%, var(--edge));
+}
+
+.message:empty {
+  display: none;
+}
+
+.empty {
+  color: var(--muted);
+  font-style: italic;
+}

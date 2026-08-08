@@ -4,30 +4,16 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Flash Cards</title>
-    <style>
-      :root { color-scheme: light dark; }
-      body {
-        margin: 0;
-        min-height: 100vh;
-        display: grid;
-        place-items: center;
-        font: 16px/1.6 system-ui, sans-serif;
-        text-align: center;
-        padding: 2rem;
-        box-sizing: border-box;
-      }
-      h1 { font-size: 2rem; margin: 0 0 0.5rem; }
-      p { margin: 0; opacity: 0.7; max-width: 34rem; }
-    </style>
   </head>
   <body>
     <!--
-      Placeholder. Exists so the GitHub Pages deployment path can be proven end to end
-      before any application code is written. Replaced at build order step 3.
+      The shell. Everything inside #app is built by src/main.ts.
+
+      Nothing here hardcodes the /flash-cards/ subpath: Vite rewrites the module
+      path below at build time. Anything added to public/ would not be rewritten
+      and would need the prefix by hand — see DESIGN.md, "The subpath".
     -->
-    <main>
-      <h1>Flash Cards</h1>
-      <p>Spelling and multiplication practice. Not built yet — this page exists to verify deployment.</p>
-    </main>
+    <main id="app"></main>
+    <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

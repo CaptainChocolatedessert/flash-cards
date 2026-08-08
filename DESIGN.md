@@ -4,10 +4,12 @@ A question-and-answer study game for two kids: **spelling** (spoken word, typed 
 **multiplication facts**. Spaced repetition underneath both, per-child progress, runs in a browser
 with no backend.
 
-Status: **the headless core is built and tested** (`src/core/`, 59 tests). Everything that decides
-what to ask next and what a result means exists and is exercised, including against simulated
-children. There is still no UI, no storage, and no content — the page served from Pages is the
-original placeholder. Build order step 1 of 9.
+Status: **the headless core and the storage layer are built and tested** (`src/core/`,
+`src/storage/`, 97 tests). Everything that decides what to ask next and what a result means exists
+and is exercised, including against simulated children; progress persists across a browser restart,
+and can be exported to a file and restored from it — both checked by hand, not just in tests. The
+only screen is the profile picker that proves it. There is no game and no content yet. Build order
+step 2 of 9 done; step 3 is the multiplication game end to end.
 
 This file is the design record and the thing that carries context between sessions. Keep it current
 as work lands. When a decision is superseded, **replace it and say it was replaced** — do not stack
@@ -567,8 +569,20 @@ Per profile (one per child):
   word, or by the normalised `min×max` form for multiplication facts.
 - **Performance history**: per attempt — the result, the elapsed time, and the keystroke timeline.
   **Cap it.** Keystroke timelines grow without bound and nothing needs three years of them; a rolling
-  window of recent attempts plus retained per-session aggregates is the shape.
-- **Audio blacklist**: recording ids the kid could not understand.
+  window of recent attempts plus retained per-session aggregates is the shape. **As built: 500
+  attempts and 1,000 session summaries per subject per child.** The attempt number is set by the
+  export file having to stay emailable — at roughly 300 bytes an attempt it is about 150KB per
+  subject per child. Summaries survive the trim, so the long-run trends do not depend on the window.
+  Each stored attempt also carries which band it came from and whether it was a first exposure,
+  without which the archive would not support the recomputation it exists to make possible (open
+  question 9).
+- **Audio blacklist**: recording ids the kid could not understand. **Stored outside any profile**,
+  since the current default is that it is shared — see open question 3.
+
+Every stored record carries a **schema version**, and so does the export file. Nothing needs
+migrating yet; the point is that the first incompatible change has something to key off instead of
+having to infer what it is looking at. A file from a *newer* version is refused rather than read on
+a best-effort basis.
 
 The word lists and audio are **build artefacts, not user data** — they ship with the app and never
 enter the progress record. Only references to them do. This matters for the export file: it should
@@ -666,6 +680,50 @@ describes a real 12-year-old is a different question, and it is open question 9.
 
 ---
 
+## The storage layer, as built
+
+Everything lives in `src/storage/`. The record shapes are in one file, the interface and the pure
+record-manipulating functions in another, the IndexedDB implementation in a third, and the export
+file's reader and writer in a fourth. `src/main.ts` is the **only** file that names the IndexedDB
+implementation; everything else takes the interface, which is what keeps a different implementation
+a drop-in rather than a rewrite.
+
+**Profiles are found by scanning keys, not from a separate index.** An index would be one fewer read
+and a second copy of a fact that can drift — a profile that exists but is not listed, or is listed
+and is not there. At two children the scan is free, so the failure mode is worth more than the read.
+
+**The export file is everything, not one profile.** It is the backup that has to survive a wiped
+machine, and a backup that silently omits the other child is worse than none. Restoring offers two
+modes: *replace*, which makes the database match the file and deletes anything not in it, and
+*merge*, which matches profiles by id and keeps whichever was **written most recently**. The merge
+is deliberately whole-record rather than field-by-field — reconciling two divergent box states for
+the same word has no correct answer without knowing which session really happened later, and a rule
+that is easy to explain beats a clever one that invents a history neither device had.
+
+**Import validation goes deeper than it looks worth.** A file that is obviously wrong throws on the
+first field and costs nothing to handle. The one that matters is a file that is *nearly* right,
+where one number has become null or text, lands in the estimator, and turns every prediction into
+NaN with no error raised anywhere. So every number in an imported file is checked for being finite,
+and the error names the exact field.
+
+**Which profile is selected lives in `localStorage`, not in the record.** It is a UI preference, it
+means nothing on another device, and it should not travel in a backup.
+
+The profile screen reports whether the browser has marked storage as persistent, but does **not**
+request it — `navigator.storage.persist()` stays at build order step 8, where it belongs alongside
+the PWA install that makes a grant likely. Reporting the current answer costs nothing and is the
+fastest way to tell an eviction from a bug.
+
+**Testing.** The storage tests run against `fake-indexeddb`, and the round-trip cases write a fully
+populated record — items across several boxes, a moved ability with per-band residuals, attempts
+with keystroke timelines, session summaries — because an empty record round-trips through almost any
+bug. They reopen the database through a second connection, which is the closest an automated test
+gets to quitting the browser and coming back. **It is not a substitute for actually restarting the
+browser**: only that shows the origin's storage was not evicted, so that check is done by hand — and
+was, on 2026-08-08, along with an export and a restore from the resulting file.
+
+---
+
 ## Open questions
 
 1. **Word list licensing.** Dolch and Fry are safe. **Scripps "Words of the Champions" is free to
@@ -674,7 +732,9 @@ describes a real 12-year-old is a different question, and it is open question 9.
    from SCOWL, which is public domain but a cruder proxy for grade level.
 2. **Sentence corpus filtering.** How aggressively, and verified how. Blocking condition for the
    cloze feature.
-3. **Blacklist scope** — per-child or shared. Shared is the default; unresolved.
+3. **Blacklist scope** — per-child or shared. Shared is the default; unresolved. Built that way: it
+   sits outside any profile and an import unions the two sides rather than picking one. Moving it
+   per-child later means moving it into each child's record and dropping that union rule.
 4. **Demotion severity** — box 1 or back one box. Decide from watching them play.
 5. **Custom weekly lists.** No parent view was wanted, but "type in this week's actual spelling list
    from school" is the feature most likely to be asked for later. It has no recordings and no cloze
@@ -726,8 +786,14 @@ describes a real 12-year-old is a different question, and it is open question 9.
    governor, and multiplication fact normalisation. 59 tests, including simulated children checked
    for both convergence on a fixed ability and tracking of a rising one, each across several seeds.
    No DOM, no storage, no content.
-2. **`ProgressStore` over IndexedDB**, plus profile create/select, plus JSON export/import. Prove
-   persistence survives a browser restart before building anything on top of it.
+2. **`ProgressStore` over IndexedDB**, plus profile create/select, plus JSON export/import. Done.
+   `src/storage/` behind one interface, with the record shape, its caps and its schema version
+   pinned down; a deliberately plain profile screen that creates, selects and deletes children and
+   prints the counts that would be wrong if a save were dropping part of the record; and
+   export/restore/merge over a validated JSON file. 38 tests against `fake-indexeddb`, plus the
+   by-hand check that neither a fake nor a page reload can stand in for: **verified 2026-08-08 that
+   profiles survive quitting and reopening the browser, and that an exported file restores.** That
+   was the precondition for building anything on top of the store, and it is met.
 3. **Multiplication game end to end.** Chosen before spelling deliberately: it needs no audio, no
    corpus and no licensing research, so it exercises the scheduler, the store, the session shell and
    the readout against the simplest possible content. Everything it proves, spelling reuses.
