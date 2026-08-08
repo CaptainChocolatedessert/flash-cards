@@ -4,8 +4,9 @@ A question-and-answer study game for two kids: **spelling** (a spoken word, type
 **multiplication facts**. Spaced repetition underneath both, separate progress for each child, and
 no backend — it runs entirely in the browser.
 
-**Status: planning.** No application code exists yet. This repo currently holds the design record,
-the build toolchain, and a placeholder page proving the deployment path.
+**Status: early.** The headless core is built and tested — the scheduler, the proficiency estimator
+and the logic that picks what to ask next all live in `src/core/`. There is no UI, no storage and no
+content yet, so the deployed page is still a placeholder.
 
 Live at <https://captainchocolatedessert.github.io/flash-cards/>
 

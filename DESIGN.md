@@ -4,8 +4,10 @@ A question-and-answer study game for two kids: **spelling** (spoken word, typed 
 **multiplication facts**. Spaced repetition underneath both, per-child progress, runs in a browser
 with no backend.
 
-Status: **planning only.** Nothing is built. The repo carries the build toolchain and a placeholder
-page so the deployment path is proven end to end, and no application code at all.
+Status: **the headless core is built and tested** (`src/core/`, 59 tests). Everything that decides
+what to ask next and what a result means exists and is exercised, including against simulated
+children. There is still no UI, no storage, and no content — the page served from Pages is the
+original placeholder. Build order step 1 of 9.
 
 This file is the design record and the thing that carries context between sessions. Keep it current
 as work lands. When a decision is superseded, **replace it and say it was replaced** — do not stack
@@ -244,11 +246,41 @@ essentially online Rasch estimation, and it has three properties that matter her
 genuinely non-monotone — strong on technical vocabulary, weak on common irregulars — and a pure
 single-parameter model cannot express that. The principled version is hierarchical shrinkage: each
 grade gets a residual that starts pinned at zero and is allowed to move as its own sample grows.
-Start with the pooled model alone; add residuals when there is enough data for them to mean anything.
+
+**Built that way directly**, rather than pooled-first with residuals added later as an increment.
+Shrinkage makes the staging unnecessary: a grade's residual is multiplied by how much of its own
+evidence exists, so with no samples it contributes exactly nothing and the model *is* the pooled one.
+There is no second version to write. A slow decay pulls each residual back toward zero as well,
+which is what stops the shared ability and the per-grade offsets from drifting into an
+indistinguishable pair — they are otherwise not separately identifiable.
 
 **Track uncertainty and show it.** A grade with few samples should render faded or with a visible
 interval. A confident-looking bar built from nothing is the same class of error as a diagnostic that
 cannot distinguish its outcomes.
+
+#### What the floored update actually costs — measured, 2026-08-08
+
+Building it surfaced a consequence of the floor that was not obvious when the floor was decided: **a
+filter that never stops moving never stops wobbling.** Its resting spread is `sqrt(step / 2I)`
+logits, where `I` is the information one answer carries (about 0.2 near the operating point). That is
+a permanent noise floor on the estimate, and it is the price of tracking a rising ability.
+
+Measured against simulated children over thirty seeds, an update floor of 0.12 left the estimate
+wandering by up to half a logit even after six hundred answers — enough to shift the introduction
+zone by a whole grade between sessions for no reason. **The floor is now 0.05**, which cuts the
+wobble to about 0.35 logits while still crossing two logits of genuine improvement in a few hundred
+first exposures. Both ends of that trade are real: raise it and the chart is visibly noisy week to
+week, lower it and a child's actual progress takes a term to appear.
+
+**The reported interval has to include that wobble, not just the sample count.** Otherwise the bars
+tighten with experience while the value underneath them keeps jumping around — a bar that looks
+certain and is not. So the interval is the wider of two things: ordinary lack of data early on, and
+the filter's own restlessness thereafter. It has a floor it never goes below, which is correct.
+
+If the chart still reads as jittery in practice, the remedy is to display a smoothed ability
+alongside the fast one used for updating. Not built: the chart and the introduction weighting must
+read the *same* number, and smoothing the number that feeds back into item selection is a change
+worth making deliberately rather than as a display tweak.
 
 ### Choosing where new words come from
 
@@ -274,6 +306,14 @@ Two pressures point in opposite directions, and the target is the compromise:
 session feels like competence, low enough that roughly one introduction in three is a word they
 actually needed. This is a knob, not a finding — it should be revisited after watching them play.
 
+**The width of the bump has to be narrower than it first looks**, and the reason is worth recording
+because it is easy to get wrong twice. The bump is measured in *probability*, but the logistic is
+flat near its ends, so several grades a child has effectively mastered all pile up together at 85-90%
+predicted success. At a width of 0.15 they collectively took about a fifth of all introductions. At
+0.12 that tail is small without vanishing — and it should not vanish, because the fast-track makes a
+probe into an easy grade cost one question, which is exactly what buys the occasional cheap check
+that a grade is still solid.
+
 ### How many new words — a separate question
 
 Keep **volume** and **mix** apart. The weighting above decides *where* new words come from; it should
@@ -284,6 +324,10 @@ introduce new ones only while that count is below a ceiling.** A kid with thirty
 the low boxes does not need more; they need to finish those. Without this governor a run of misses
 at the frontier compounds — misses put words in box 1, and a system that keeps introducing regardless
 buries them.
+
+**The ceiling is 15 to start with.** A guess of the same kind as the 70% target, and it will show
+itself wrong in an obvious direction: too low and sessions run out of new material and turn into pure
+drill; too high and the kid is drowning in half-learned words.
 
 ### The kid's difficulty control
 
@@ -329,18 +373,34 @@ not a plan.
 
 ### Multiplication is exempt from all of this
 
-**Load the whole table to 12 at once and let Leitner handle it.** 91 distinct facts is not enough
+**Load the whole table to 12 at once and let Leitner handle it.** 78 distinct facts is not enough
 material to need an introduction policy, and building one would be machinery in search of a problem.
-The volume governor above still applies — make all 91 *eligible*, but don't dump them all into box 1
+The volume governor above still applies — make all 78 *eligible*, but don't dump them all into box 1
 in one session.
 
-**`a×b` and `b×a` are the same fact for scheduling**, presented in both orders. 12×12 is 169 ordered
-pairs but only 91 distinct facts, and treating them separately doubles the deck for no learning gain.
+**`a×b` and `b×a` are the same fact for scheduling**, presented in both orders. 1-12 is 144 ordered
+pairs but only 78 distinct facts, and treating them separately doubles the deck for no learning gain.
+
+**Corrected 2026-08-08**: this said 91 of 169, which is the count for 0-12. The 0s are not drilled
+and there is no 0s bar on the chart, so the range starts at 1 and the deck is 78.
 
 **Track proficiency by times table — 1s, 2s, 3s … 12s.** Twelve bars, parallel to the spelling grade
-chart, so the two games' progress displays read as siblings without sharing any mechanism. A fact
-belongs to two tables (7×8 counts toward both the 7s and the 8s); count it in both for the chart,
-keep it single for scheduling.
+chart, so the two games' progress displays read as siblings. A fact belongs to two tables (7×8 counts
+toward both the 7s and the 8s); count it in both for the chart, keep it single for scheduling.
+
+**As built, the two subjects do share the estimator.** The earlier note that they should share
+"nothing else" beyond scheduler, store and session shell has been relaxed: the estimator turned out
+to be generic over a set of *bands* with per-band difficulties, and school grades and times tables
+are both just band sets. Two instances, two difficulty tables, one piece of code. Writing it twice
+would have been duplication, not separation.
+
+**A first-exposure result is credited to the larger factor's table.** The estimator takes one band
+per event and a fact spans two, so 7×8 informs the 8s — the harder of the two is the one the child
+was actually up against. The chart's *counts* still show the fact under both tables.
+
+The starting difficulty prior for the tables is the conventional ordering — 1s, 2s, 5s and 10s nearly
+free, 6s through 9s and the 12s where children stall. It is not derived from these children, and the
+per-band residuals exist to correct it.
 
 For the 8th grader this is likely all fluent already, so the fast-track will clear it quickly and the
 real value is the **timed fluency** mode rather than learning. If the subject is exhausted, the
@@ -570,6 +630,42 @@ CI runner.
 
 ---
 
+## The core, as built
+
+A map, not a second copy of the reasoning — the *why* for everything below is in the sections above,
+and if the two ever disagree the sections above are the ones that were argued.
+
+Everything lives in `src/core/`, is pure, and imports nothing from the DOM or from storage. Each
+module keeps its tuning constants at the top of its own file, commented with what moving them costs;
+that is the one place to look for a knob, and the numbers are deliberately not repeated here.
+
+- **`types.ts`** — the shared vocabulary. A box, a timing mode, one attempt, one item's scheduling
+  state, and a band (a grade for spelling, a times table for multiplication).
+- **`scheduler.ts`** — the Leitner ladder. Box intervals, promotion and demotion, the first-exposure
+  fast-track, whether a question is asked against the clock, what is due now, where a missed item
+  goes back into the running session, and the box counts the governor and the readout both need.
+- **`proficiency.ts`** — the estimator. The child's ability, each band's difficulty and residual, the
+  predicted chance on an unseen item, and the interval around it. Also the two band sets: grades for
+  spelling, times tables for multiplication.
+- **`introduction.ts`** — what to introduce and how much of it. The weighting over bands, drawing
+  from it, which bands the chart should highlight as active, the harder/easier control, and the
+  volume governor.
+- **`multiplication.ts`** — facts. Normalising `a×b` and `b×a` to one item, the deck, which tables a
+  fact counts toward, and which band a first exposure is credited to.
+- **`rng.ts`** — a seedable random source, injected rather than reached for, so anything that samples
+  can be tested.
+
+**Tests sit beside each module.** The estimator's are the ones worth knowing about: a synthetic child
+with a known true ability, answering by coin flip, checked both for settling on a fixed ability and
+for following one that rises mid-run — each across several seeds, because a single seed passing says
+nothing. The tolerances are set above the worst case of a thirty-seed sweep.
+
+**What those tests do not prove.** The simulated child answers according to the same model the
+estimator assumes, so they establish that the machinery converges and tracks. Whether the model
+describes a real 12-year-old is a different question, and it is open question 9.
+
+---
+
 ## Open questions
 
 1. **Word list licensing.** Dolch and Fry are safe. **Scripps "Words of the Champions" is free to
@@ -588,7 +684,9 @@ CI runner.
    watching them play. Its two failure modes look different: too high and nothing new gets learned
    because everything introduced is already known; too low and they stop playing.
 7. **When per-grade residuals should be allowed to move**, and how much. Too eager and the chart is
-   noise; too reluctant and a genuinely non-monotone kid is misread all year.
+   noise; too reluctant and a genuinely non-monotone kid is misread all year. A starting answer is
+   built — a grade is trusted halfway at eight of its own first exposures — but that number is a
+   guess and nothing has tested it against a real child.
 8. **Whether the difficulty control should persist or decay.** A kid who picks "harder" during a good
    session may not want it a week later, and a stuck setting is indistinguishable from a broken
    estimator.
@@ -616,18 +714,18 @@ CI runner.
    rising ability either way, and **keep the raw attempt history** — if the answer arrives later, the
    estimator can be re-derived from data already collected. Same reasoning as storing the keystroke
    timeline: cheap now, unrecoverable later.
-7. **Mixing subjects in one session.** Wanted eventually, deliberately unplanned.
+10. **Mixing subjects in one session.** Wanted eventually, deliberately unplanned.
 
 ---
 
 ## Build order
 
-Nothing below is started.
-
 0. **Repo, toolchain, Pages deploy.** Done — placeholder page only, no application code.
-1. **The pure core, tested, with no UI.** Leitner scheduler, first-exposure fast-track, proficiency
-   estimator, introduction weighting and volume governor, multiplication fact normalisation. This is
-   where correctness lives and it is entirely headless.
+1. **The pure core, tested, with no UI.** Done. `src/core/` — Leitner scheduler with the
+   first-exposure fast-track, the proficiency estimator, the introduction weighting and volume
+   governor, and multiplication fact normalisation. 59 tests, including simulated children checked
+   for both convergence on a fixed ability and tracking of a rising one, each across several seeds.
+   No DOM, no storage, no content.
 2. **`ProgressStore` over IndexedDB**, plus profile create/select, plus JSON export/import. Prove
    persistence survives a browser restart before building anything on top of it.
 3. **Multiplication game end to end.** Chosen before spelling deliberately: it needs no audio, no
