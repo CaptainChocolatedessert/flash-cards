@@ -198,14 +198,30 @@ Track, per child, an estimate of **the probability they would correctly spell a 
 seen before, at each grade level.** That is the quantity the whole system needs, and it is what the
 display shows.
 
-**Estimate from first-exposure results only.** This is load-bearing and easy to get wrong: once a
-word is in the box system, getting it right tells you about *that word's rehearsal state*, not about
-underlying grade-N ability. Feeding review outcomes into the estimator would make every grade drift
-upward toward 100% as words get learned, and the chart would report the kid's practice history
-instead of their ability. **Only virgin words carry information about grades.**
+**Estimate from first-exposure results only** — the starting position, not a settled one.
 
-Note this makes the estimate self-consistently about *untried* words, which is exactly the quantity
-needed for deciding what to introduce.
+The reasoning for it: once a word is in the box system, getting it right tells you about *that word's
+rehearsal state*, not about underlying grade-N ability. Feeding review outcomes into the estimator
+would make every grade drift toward 100% as words got learned, and the chart would report practice
+history instead of ability while looking entirely plausible.
+
+**The user's objection, 2026-08-08, and it is a real one:** learning words at a level may *transfer*
+to unseen words at that level, because what is being learned is partly a generalisable pattern
+(orthographic conventions, morphology, common roots) rather than a set of unrelated facts. If so,
+true ability at a grade genuinely rises as words there are learned. But some words are simply
+irregular and teach nothing beyond themselves, so transfer is at best partial. **Which of those
+dominates is a pedagogical question nobody here knows the answer to** — see open question 9, where
+it is parked for research rather than guessed at.
+
+**One consequence is clear enough to build on now: the rating must keep moving, not converge.** A
+conventional estimator of a *fixed* quantity shrinks its update size toward zero as data accumulates.
+If ability at a grade genuinely rises with learning, that is exactly wrong — the estimator would lock
+onto a stale value and the chart would go flat while the kid kept improving. Keep the update size
+floored so the estimate tracks a moving target. This is the right call under either answer, since a
+child's ability is not static regardless of why.
+
+Note the estimate is self-consistently about *untried* words, which is the quantity needed for
+deciding what to introduce.
 
 #### The small-sample problem, and the way through
 
@@ -576,6 +592,30 @@ CI runner.
 8. **Whether the difficulty control should persist or decay.** A kid who picks "harder" during a good
    session may not want it a week later, and a stuck setting is indistinguishable from a broken
    estimator.
+9. **Does learning words at a grade transfer to unseen words at that grade?** Raised by the user
+   2026-08-08 and deliberately parked — **do the pedagogical research before tuning the estimator**,
+   rather than guessing from first principles.
+
+   The question: is spelling ability at a level partly a *generalisable* skill (orthographic
+   patterns, morphology, roots — so learning some grade-6 words makes other grade-6 words easier),
+   or mostly a pile of individually-memorised irregulars? Almost certainly both, and the ratio is
+   what matters.
+
+   **What turns on the answer.** If transfer is substantial, review outcomes carry real information
+   about grade-level ability and excluding them wastes most of the data — and the introduction
+   weighting should expect a grade to get easier as it is worked, rather than treating each word as
+   independent. If transfer is weak, the current first-exposure-only rule is right and the estimate
+   should barely move except when new words are met.
+
+   **Worth searching for:** transfer effects in spelling instruction, orthographic pattern
+   generalisation, and whether standardised spelling assessments model a grade as a latent trait or
+   as word-specific knowledge. The psychometric literature on Rasch-modelling spelling tests is
+   likely the fastest route to a defensible answer.
+
+   Meanwhile: build first-exposure-only, keep the estimator's update size floored so it can track a
+   rising ability either way, and **keep the raw attempt history** — if the answer arrives later, the
+   estimator can be re-derived from data already collected. Same reasoning as storing the keystroke
+   timeline: cheap now, unrecoverable later.
 7. **Mixing subjects in one session.** Wanted eventually, deliberately unplanned.
 
 ---
