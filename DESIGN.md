@@ -523,27 +523,52 @@ exactly one band per first exposure, so duplicates need a resolution rule before
 the Dolch portion demonstrably contains recall errors, the 4-8 portion should be assumed to carry
 comparable slips — real words placed in the wrong grade.
 
-#### The decision
+#### The decision — user's call, 2026-08-08
 
-**Make provenance a property of a pipeline that can be re-run, not a claim in a metadata field.**
-Trying to prove a negative about an artifact of unknown origin is the wrong move; building the list
-so its origin is reproducible is the right one. Concretely:
+**Ship the seed list, with its errors fixed. Generating more words is a later feature, not a
+precondition.**
 
-- **Vocabulary is drawn from SCOWL**, so every shipped word traces to a licensed source.
-- **The closed-class sets are regenerated mechanically** — homophones from a pronunciation dictionary
-  (same phonemes, different spelling), `-tion`/`-sion` by suffix match, irregular plurals from
-  morphology. Those come from computation, not from anyone's list, and they are most of the file.
-- **Grade and difficulty are assigned by our own formula** over frequency and computed orthographic
-  irregularity — how unpredictable a word's spelling is from its sound, which is what makes `colonel`
-  and `receipt` hard for children who know both words perfectly well, and which the comprehension-
-  based norms miss entirely.
-- **The seed list is kept as calibration and validation input, not shipped verbatim.** For the ~400
-  judgement-heavy words, a word ships only if our own model would have selected it for that grade
-  anyway — so the seed influences the candidate pool while the *selection*, which is the only
-  protectable part, is ours.
+The residual risk is small and the alternative was disproportionate: individual words are not
+protectable, most of the file is closed-class categories where there is nothing to copy, and the
+judgement-heavy remainder is a few hundred words in a private family game. Blocking a working
+spelling game on a corpus-generation pipeline would be putting the measurement in front of the task
+— the same error the word-list cap made, rejected for the same reason.
 
-This is strictly better than trusting either that earlier session or a fresh round of generation,
-because it replaces an unverifiable assertion with something re-runnable.
+**What the generation pipeline would have been, kept because it is the growth path** (see open
+question 11): vocabulary drawn from SCOWL so every word traces to a licensed source; the
+closed-class sets regenerated mechanically — homophones from a pronunciation dictionary (same
+phonemes, different spelling), `-tion`/`-sion` by suffix match, irregular plurals from morphology;
+grade and difficulty from our own formula over frequency and computed **orthographic irregularity**,
+which is what makes `colonel` and `receipt` hard for children who know both words perfectly well and
+is the thing every comprehension-based norm misses. That last idea is the valuable one and should
+survive whatever else changes.
+
+#### What "with its errors fixed" means, concretely
+
+- **The 32 duplicate words must be resolved before import.** The scheduler keys an item by its word
+  and the estimator takes exactly one band per first exposure, so a word in two grades has no valid
+  interpretation. **Rule: the higher grade wins.** A word placed in a later grade is there because
+  someone judged it hard enough to warrant it, and that judgement is spelling-specific — `their` is a
+  grade-2 *reading* sight word and a grade-4 *spelling* problem, and `children`, `feet`, `men` and
+  `sheep` are all easy to read and hard to spell.
+- **The Dolch recall errors need correcting against a second source**, not against the single
+  reference used in the audit. `giving` should almost certainly be `going`, and `left`, `goat`,
+  `woman` and `women` appear to be missing — but `good-bye` may well be legitimate, and "fixing"
+  something already correct is its own error.
+- **Grade misplacement in 4-8 cannot be verified**, since there is no reference to check against.
+  What *can* be done cheaply is a frequency sanity pass: flag any word whose corpus frequency is
+  wildly out of line with its assigned grade — a very common word sitting at grade 8, a rare one at
+  grade 4. That catches gross misplacement without pretending to validate the rest.
+
+#### What will run out first
+
+- **There is no headroom above grade 8**, and the older child is *in* grade 8. That gap will be felt
+  before any other.
+- **~830 words across grades 4-8 is a few months of regular play, not a year.** The fast-track
+  retires an already-known word after one question, which is what makes the list feel generous at
+  first and is also what empties it: most of what either child already knows is gone in a couple of
+  sessions. Exhaustion is not a failure — reviews continue and the "nothing to practise right now"
+  screen already exists — but it is when the generation work stops being optional.
 
 The remaining gaps are the build work:
 
@@ -986,6 +1011,23 @@ stored; nothing shows either yet.
    estimator can be re-derived from data already collected. Same reasoning as storing the keystroke
    timeline: cheap now, unrecoverable later.
 10. **Mixing subjects in one session.** Wanted eventually, deliberately unplanned.
+11. **Growing the word corpus past the seed list.** Deferred 2026-08-08, deliberately: the seed bank
+    ships first and this comes when it runs dry — which it will, and the design above says roughly
+    when and why.
+
+    Two distinct pieces of work, and the first is much more urgent than the second. **Extending above
+    grade 8** matters immediately, because the older child is in grade 8 and has no headroom at all.
+    **Deepening grades 4-8** matters within a few months of regular play.
+
+    The approach is sketched under "Spelling word lists": SCOWL for vocabulary, closed-class sets
+    regenerated mechanically, and grade assigned from frequency plus **computed orthographic
+    irregularity** — how unpredictable a word's spelling is from its sound. That last measure is the
+    part worth keeping hold of. It is the only signal examined that is actually about *spelling*
+    rather than about vocabulary knowledge, and it is computable from a pronunciation dictionary with
+    no licensing question at all.
+
+    It would also make provenance re-derivable rather than asserted, which the seed list's audit
+    showed is worth something.
 
 ---
 
@@ -1016,12 +1058,12 @@ stored; nothing shows either yet.
    possible content. That paid off — three real defects surfaced only by playing it, all recorded
    above: the missed-item echo, sessions that ended without writing a summary, and phantom items left
    by introductions that ran ahead of the child.
-4. **Word lists.** Licensing resolved — no longer blocked. The work is a **build-time pipeline**, not
-   a file to paste in: draw vocabulary from SCOWL, regenerate the closed-class sets mechanically,
-   assign grade and difficulty by our own formula over frequency and orthographic irregularity, and
-   use the seed bank as calibration and validation rather than shipped content. Extend past grade 8
-   so the older child has headroom. Resolve the 32 duplicate words. Commit the pipeline alongside its
-   output and a notices file, so the list's provenance can be re-derived rather than asserted.
+4. **Word lists.** Licensing resolved — no longer blocked. Import the ~1,145-word seed bank: resolve
+   the 32 duplicates (higher grade wins), correct the Dolch recall errors against a second source,
+   run a frequency sanity pass over the grade-4-8 placements, and reshape into what the deck wants —
+   a word, a grade, and its set membership, the last kept because the homophone and commonly-confused
+   sets are exactly what the cloze feature needs. Commit with a notices file. Growing the corpus is
+   open question 11, not part of this step.
 5. **Audio pipeline.** Build-time fetch, transcode, attribution generation. Speech-synthesis
    fallback first so the game works before the corpus exists.
 6. **Spelling game**, including the blacklist button.
