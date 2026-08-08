@@ -170,16 +170,24 @@ than a slow one.
 Level is a **per-subject** concept, not a global grade number. The two games ladder along completely
 different axes and forcing them into one scale would be arbitrary.
 
-### Climbing the ladder — a frontier, not a gate
+### Climbing the ladder — bands in order, taught to completion
 
-The active question pool is drawn mostly from the **current band**, plus a small **probe rate**
-(~10-15%) of words from the band above. When the probes come back consistently correct, the frontier
-advances.
+**Bands are worked in order and each is taught to completion. There is no probing ahead.**
 
-Deliberately not a gate: requiring a band to be exhaustively cleared before the next unlocks makes
-the boundary a wall, and a kid who has met 90% of a band still has to slog the tail. The frontier
-slides instead. Words are never removed from eligibility, they just retire into high boxes and stop
-being scheduled.
+An earlier draft drew the pool mostly from the current band plus a ~10-15% probe rate from the band
+above, advancing a "frontier" when probes came back correct. **Dropped 2026-08-08**, on the user's
+question of how a kid ever actually *learns* a level that way. They don't: probing detects readiness,
+it does not teach a band, and the goal here is that every word in a band gets learned.
+
+**The probe was solving a problem the first-exposure fast-track had already solved.** Its purpose was
+to avoid grinding through bands below the kid's real level — and the fast-track means those bands
+cost roughly one question per word anyway. The first band that *doesn't* clear quickly is their
+actual level, discovered by arriving at it. No detection mechanism is needed; the slowdown is the
+signal.
+
+**Advance at ~90% of the band in box 4+, not 100%.** Stragglers keep circulating in the review mix
+while the next band opens. One impossible word must not be able to block progress, and nothing is
+ever abandoned.
 
 There is no re-testing and no visible pass/fail. Show a "you unlocked Grade 5 words!" moment for the
 motivation, but the decision behind it is data-driven, not a test the kid has to sit.
@@ -196,11 +204,28 @@ available:
 - **SCOWL** (Spell Checker Oriented Word Lists) — public domain, bucketed by frequency. Useful as a
   *difficulty proxy* to smooth band boundaries or extend past grade 8.
 
-Target roughly 150-300 words per band, with the density concentrated in grades 4-9 where the
-discrimination actually matters for these two kids.
-
 **Licensing is an open question, not a settled one** — see below. Verify before committing any list
 to a public repo.
+
+### Band size — set by the completeness requirement
+
+Because bands are taught to completion, size is a hard constraint rather than a preference.
+
+**Target ~120 words per band.** At the frontier a kid absorbs maybe 10-20 genuinely new words a week,
+so a band containing ~50 unknown words is three to five weeks of work — a reasonable cadence for
+something called a "level". At 250 words it would be an entire semester and would stop feeling like
+one. Below the frontier, ~120 already-known words clear in two or three sessions.
+
+**Split each band into units of ~20-25 words** — "Grade 5, set 3 of 5". Three to five weeks is far
+too distant a finish line for a child; the unit is the milestone they should actually see.
+
+A band is a *representative sample* of a grade's difficulty, not complete coverage of what that grade
+teaches. 120 words is ample both to place a kid and to be worth learning.
+
+**Total corpus: roughly grade 2 through grade 10, so ~9 bands, ~1,100 words.** Note this is far
+smaller than the 4,000-word figure an earlier draft assumed. The completeness requirement *shrinks*
+the corpus rather than growing it, which also makes the audio pipeline substantially cheaper and the
+licensing research narrower.
 
 ### Multiplication buckets
 
@@ -217,51 +242,70 @@ Not grades. Four buckets, ordered by how they are actually taught:
 them separately doubles the deck for no learning gain — 12×12 is 169 ordered pairs but only 91
 distinct facts.
 
+**Completeness needs no discussion here.** 91 distinct facts across four buckets is ~20-25 each,
+which is already the unit size the spelling bands have to be deliberately chopped down to reach. A
+bucket *is* a unit.
+
 For the 8th grader this is likely all fluent already, so the fast-track will clear it fast and the
 real value there is the **timed fluency** mode rather than learning. If the subject turns out to be
 exhausted, the natural extensions are squares past 12, or division facts as the inverse.
 
 ---
 
-## Timed and untimed — measuring three different things
+## Timed and untimed — what the data actually support
 
-The parent asked for a mix so that pure spelling ability can be separated from fast recall and
-typing speed. Those are three distinct signals and the design should keep them apart rather than
-collapsing them into one score.
+The parent asked for a mix so that spelling ability can be told apart from recall speed and typing
+speed. An earlier draft proposed decomposing an answer into *latency to first keystroke* (retrieval)
+and *characters per minute thereafter* (typing).
 
-| Signal | Measured by |
-|---|---|
-| Do they know it? | accuracy, untimed |
-| Can they retrieve it quickly? | latency from prompt to **first keystroke** |
-| Can they type? | characters per minute **during** the answer |
+**That decomposition was wrong and is dropped** — the user's objection, 2026-08-08: a fast first
+letter followed by a slow finish is just as likely to mean the first letter was obvious and the rest
+was not. The pause that reveals ignorance is usually *inside* the word, not before it. Splitting at
+the first keystroke assumes retrieval completes before typing begins, and for spelling it plainly
+does not.
 
-Splitting latency from typing rate is what distinguishes "didn't know the word" from "types slowly",
-and those want completely different responses from the game. A single elapsed-time number cannot
-tell them apart.
+So: **record what is observed, and infer nothing.** Did they get it right, and how long did it take.
+
+### Correctness schedules; time is only reported
+
+**Time never feeds the scheduler.** A word moves between boxes on whether it was spelled correctly
+and on nothing else. Elapsed time is a *reported metric* — shown to the kid, trended across sessions
+— with no influence on what gets asked next. That keeps a motor-skill problem out of the learning
+signal, and it is simpler than the asymmetric rule it replaces.
+
+One rule survives from that draft: **a timed miss does not demote.** Time pressure produces errors
+on words a kid genuinely knows, so a wrong answer against the clock is not evidence of a gap. Only
+untimed results push a word down.
+
+### Store the keystroke timeline anyway
+
+Capturing per-keystroke timestamps costs nothing — the input events are already there — and storing
+them keeps every later analysis open. If the interval *shape* turns out to be informative (the
+plausible version: median interval as typing rate, longest pause as where they hesitated, wherever
+in the word that falls), it can be computed later from data already collected.
+
+**The asymmetry that justifies it: timings not recorded cannot be recovered, and timings recorded
+but unused cost a few bytes.** Build no inference on top of them until there is a reason. This is
+storage, not a feature.
+
+### Typing speed as a goal
+
+Typing practice is a wanted outcome, so it needs a number the kid can watch go up. Use **correct
+characters per minute across a whole session**, not anything per-word — it is what typing tutors
+use, it is robust to one slow word, and it requires no separation of retrieval from typing.
 
 ### Which mode when
 
-**Proposal: the timing mode follows the box.** Low-box words (still being learned) are asked
-untimed; high-box words (box 4+, effectively known) are asked timed, as a fluency check. Plus an
-explicit "speed round" the kid can choose.
+**The timing mode follows the box.** Low-box words (still being learned) are asked untimed; box 4+
+words (effectively known) are asked timed as a fluency check. Plus an explicit "speed round" the kid
+can choose. The clock lands only on words where speed is the remaining thing to improve, with no
+mode switch anyone has to think about.
 
-This gets both signals without a mode switch the kid has to think about, and it puts the clock only
-on words where speed is the remaining thing to improve.
+**Never show a clock in untimed mode**, and don't score against time invisibly either.
 
-### The asymmetry rule — important
-
-**A timed *correct* answer promotes. A timed *incorrect* answer does not demote.**
-
-A timed miss is confounded with typing speed, and demoting a word a kid can genuinely spell — just
-not fast enough — corrupts the scheduling signal with a motor-skill problem. Only untimed results
-may push a word down. This asymmetry is deliberate and should not be "tidied up" into symmetry.
-
-### Typing, generally
-
-Answers are typed, which is the point. But be aware the confound runs both ways: for the younger
-kid, spelling accuracy will be entangled with typing ability. If that shows up, letter tiles or a
-click-to-build input is the remedy for low bands. **Never score on time in untimed mode**, not even
-invisibly.
+One confound to stay alert to: for the younger kid, spelling accuracy will be entangled with typing
+ability regardless of mode. If that shows up, letter tiles or a click-to-build input is the remedy
+for low bands.
 
 ---
 
@@ -291,8 +335,9 @@ recordings once, transcodes to MP3 or M4A, and commits the result. Consequences 
 - **Transcoding is not optional.** Commons files are largely Ogg Vorbis, which Safari has
   historically not played. MP3 removes an entire class of platform bug for one build step.
 
-Rough size: ~4,000 words at ~15KB is ~60MB. Fine for a Pages repo (well under the 1GB soft limit),
-but see the PWA note about not precaching it.
+Rough size: ~1,100 words at ~15KB is under 20MB — comfortable for a Pages repo. Small enough that
+precaching becomes arguable, but the PWA note still stands: cache on demand, since nothing needs
+grade 9 audio on a device working through grade 4.
 
 **Store multiple recordings per word where Commons has them.** This is what makes the blacklist
 degrade gracefully instead of falling straight to synthesis.
@@ -349,9 +394,9 @@ Per profile (one per child):
 - **Per-subject level state**: current band/bucket, frontier position.
 - **Per-item scheduling state**: box, due date, times seen, times correct, last result. Keyed by
   word, or by the normalised `min×max` form for multiplication facts.
-- **Performance history**: enough per-attempt data to compute latency and typing-rate trends.
-  Consider a cap — this grows without bound otherwise, and nothing needs three years of keystroke
-  timings.
+- **Performance history**: per attempt — the result, the elapsed time, and the keystroke timeline.
+  **Cap it.** Keystroke timelines grow without bound and nothing needs three years of them; a rolling
+  window of recent attempts plus retained per-session aggregates is the shape.
 - **Audio blacklist**: recording ids the kid could not understand.
 
 The word lists and audio are **build artefacts, not user data** — they ship with the app and never
@@ -425,7 +470,8 @@ CI runner.
    from school" is the feature most likely to be asked for later. It has no recordings and no cloze
    sentences, which makes speech synthesis load-bearing again rather than a fallback. Not designed
    for; worth not painting into a corner.
-6. **Band sizing and boundaries** — needs real lists in hand before it can be settled.
+6. **Band boundaries.** The ~120-word band size is settled; *which* words land in which band needs
+   real lists in hand. Expect the published grade labels to disagree with each other at the seams.
 7. **Mixing subjects in one session.** Wanted eventually, deliberately unplanned.
 
 ---
@@ -435,9 +481,8 @@ CI runner.
 Nothing below is started.
 
 0. **Repo, toolchain, Pages deploy.** Done — placeholder page only, no application code.
-1. **The pure core, tested, with no UI.** Leitner scheduler, first-exposure fast-track, frontier
-   advance, multiplication fact normalisation. This is where correctness lives and it is entirely
-   headless.
+1. **The pure core, tested, with no UI.** Leitner scheduler, first-exposure fast-track, band advance,
+   multiplication fact normalisation. This is where correctness lives and it is entirely headless.
 2. **`ProgressStore` over IndexedDB**, plus profile create/select, plus JSON export/import. Prove
    persistence survives a browser restart before building anything on top of it.
 3. **Multiplication game end to end.** Chosen before spelling deliberately: it needs no audio, no
