@@ -32,6 +32,18 @@ export interface MultiplicationScreenOptions {
   readonly onExit: () => void;
 }
 
+/**
+ * How long a newly drawn screen ignores Enter.
+ *
+ * Not a cosmetic delay — it is what stops one physical keypress from doing two
+ * things. A keystroke handled on an element is still propagating to the document
+ * while the next screen is being built, so a listener attached during that
+ * handler receives the same keystroke; key repeat has the same effect a moment
+ * later. Long enough to swallow both, short enough that nobody typing at speed
+ * ever notices it.
+ */
+const SETTLE_MS = 400;
+
 type Phase = "asking" | "feedback" | "over";
 
 /**
@@ -126,6 +138,13 @@ export class MultiplicationScreen {
   async #answer(typed: string): Promise<void> {
     const question = this.#session.current;
     if (question === null || this.#phase !== "asking") return;
+
+    // The same guard from the other direction: an empty box submitted the
+    // instant the question appears is a stray repeat from the keystroke that
+    // dismissed the last answer, not a considered "I don't know". A deliberate
+    // blank — sat and thought about it, no idea — still goes through, and still
+    // counts as a miss, which is honest and is what teaches the fact.
+    if (typed.trim() === "" && Date.now() - this.#shownAt < SETTLE_MS) return;
 
     this.#stopClock();
     const now = Date.now();
@@ -384,10 +403,20 @@ export class MultiplicationScreen {
     // focus happens to be, would break the rhythm of the whole session.
     this.#stopContinueKey();
     this.#continueKey = new AbortController();
+    const shownAt = Date.now();
     document.addEventListener(
       "keydown",
       (event) => {
         if (event.key !== "Enter") return;
+        // Ignore anything that arrives too soon to have been a response to what
+        // is on screen. Two things land in that window and both would skip the
+        // answer the child is supposed to be reading:
+        //
+        //  - the very keystroke that submitted the answer. This listener is
+        //    attached while that keydown is still travelling up to the document,
+        //    so it is delivered here as well.
+        //  - key repeat, from a child holding Enter down.
+        if (Date.now() - shownAt < SETTLE_MS) return;
         event.preventDefault();
         this.#next();
       },

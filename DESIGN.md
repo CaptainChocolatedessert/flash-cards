@@ -792,6 +792,20 @@ contexts. It also means the rhythm never depends on where focus happens to be.
 The correct product stays on screen with the fact still above it, so the answer has something to
 attach to.
 
+**A newly drawn screen ignores Enter for a moment, and that is load-bearing.** Handling Enter
+explicitly created a way for one physical keypress to do two things: the keystroke that submits an
+answer is still travelling up to the document while the next screen is being built, so the listener
+attached during that handler receives the very same keystroke — and a wrong answer was dismissed the
+instant it appeared, which is the one thing stopping on a wrong answer exists to prevent. Key repeat
+from a child holding Enter down does the same a moment later. Both are handled by ignoring Enter for
+a few hundred milliseconds after a screen is drawn, from both directions: the feedback card will not
+be dismissed that soon, and an *empty* answer will not be submitted that soon. A deliberate blank
+still goes through and still counts as a miss.
+
+**Found by the user playing it, not by the tests**, and it would not have been caught by them: the
+engine is where the tests are, and this was entirely in the wiring between a keystroke and the
+screen. Worth remembering when the spelling game reuses the same input handling.
+
 **The speed round is not built.** DESIGN.md lists it as a mode the child can choose, and it is
 deliberately left out for now because of an interaction that needs thinking about first: a timed miss
 does not demote, so a child who plays every session as a speed round can never be demoted at all.
