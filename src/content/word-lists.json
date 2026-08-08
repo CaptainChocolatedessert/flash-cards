@@ -1,0 +1,197 @@
+{
+  "meta": {
+    "title": "Sight Word and Spelling Lists, Kindergarten through Grade 8",
+    "audience": "General elementary and middle school, aligned to the skill progression in the New Jersey Student Learning Standards for English Language Arts",
+    "note": "New Jersey does not publish an official statewide sight word or spelling list. The NJSLS-ELA define skills, not word inventories, and the specific words are left to districts. This file is a general-purpose bank, not any single district's curriculum.",
+    "provenance": {
+      "K-3": "Dolch word lists (E.W. Dolch, 1936): 220 service words plus 95 nouns, reproduced verbatim. Public domain.",
+      "4-8": "Curated lists organized around the skills the standards call for at each grade: morphology, homophones, and academic vocabulary. These are representative general lists, not a transcription of any published or copyrighted spelling program."
+    },
+    "usage": "Each grade holds one or more named sets. Words are lowercase except proper nouns."
+  },
+
+  "grades": [
+    {
+      "grade": "K",
+      "label": "Kindergarten",
+      "focus": "High-frequency words recognized by sight",
+      "sets": [
+        {
+          "name": "Dolch Pre-Primer",
+          "source": "dolch",
+          "words": ["a", "and", "away", "big", "blue", "can", "come", "down", "find", "for", "funny", "go", "help", "here", "I", "in", "is", "it", "jump", "little", "look", "make", "me", "my", "not", "one", "play", "red", "run", "said", "see", "the", "three", "to", "two", "up", "we", "where", "yellow", "you"]
+        },
+        {
+          "name": "Dolch Primer",
+          "source": "dolch",
+          "words": ["all", "am", "are", "at", "ate", "be", "black", "brown", "but", "came", "did", "do", "eat", "four", "get", "good", "have", "he", "into", "like", "must", "new", "no", "now", "on", "our", "out", "please", "pretty", "ran", "ride", "saw", "say", "she", "so", "soon", "that", "there", "they", "this", "too", "under", "want", "was", "well", "went", "what", "white", "who", "will", "with", "yes"]
+        }
+      ]
+    },
+
+    {
+      "grade": "1",
+      "label": "Grade 1",
+      "focus": "High-frequency words and irregularly spelled words",
+      "sets": [
+        {
+          "name": "Dolch First Grade",
+          "source": "dolch",
+          "words": ["after", "again", "an", "any", "as", "ask", "by", "could", "every", "fly", "from", "give", "giving", "had", "has", "her", "him", "his", "how", "just", "know", "let", "live", "may", "of", "old", "once", "open", "over", "put", "round", "some", "stop", "take", "thank", "them", "then", "think", "walk", "were", "when"]
+        },
+        {
+          "name": "Dolch Nouns",
+          "source": "dolch",
+          "note": "Used across K-3; commonly introduced alongside the first and second grade service words.",
+          "words": ["apple", "baby", "back", "ball", "bear", "bed", "bell", "bird", "birthday", "boat", "box", "boy", "bread", "brother", "cake", "car", "cat", "chair", "chicken", "children", "Christmas", "coat", "corn", "cow", "day", "dog", "doll", "door", "duck", "egg", "eye", "farm", "farmer", "father", "feet", "fire", "fish", "floor", "flower", "game", "garden", "girl", "good-bye", "grass", "ground", "hand", "head", "hill", "home", "horse", "house", "kitty", "leg", "letter", "man", "men", "milk", "money", "morning", "mother", "name", "nest", "night", "paper", "party", "picture", "pig", "rabbit", "rain", "ring", "robin", "Santa Claus", "school", "seed", "sheep", "shoe", "sister", "snow", "song", "squirrel", "stick", "street", "sun", "table", "thing", "time", "top", "toy", "tree", "watch", "water", "way", "wind", "window", "wood"]
+        }
+      ]
+    },
+
+    {
+      "grade": "2",
+      "label": "Grade 2",
+      "focus": "Irregularly spelled words and common spelling patterns",
+      "sets": [
+        {
+          "name": "Dolch Second Grade",
+          "source": "dolch",
+          "words": ["always", "around", "because", "been", "before", "best", "both", "buy", "call", "cold", "does", "don't", "fast", "first", "five", "found", "gave", "goes", "green", "its", "made", "many", "off", "or", "pull", "read", "right", "sing", "sit", "sleep", "tell", "their", "these", "those", "upon", "us", "use", "very", "wash", "which", "why", "wish", "work", "would", "write", "your"]
+        }
+      ]
+    },
+
+    {
+      "grade": "3",
+      "label": "Grade 3",
+      "focus": "Remaining high-frequency words; multisyllable words",
+      "sets": [
+        {
+          "name": "Dolch Third Grade",
+          "source": "dolch",
+          "words": ["about", "better", "bring", "carry", "clean", "cut", "done", "draw", "drink", "eight", "fall", "far", "full", "got", "grow", "hold", "hot", "hurt", "if", "keep", "kind", "laugh", "light", "long", "much", "myself", "never", "only", "own", "pick", "seven", "shall", "show", "six", "small", "start", "ten", "today", "together", "try", "warm"]
+        }
+      ]
+    },
+
+    {
+      "grade": "4",
+      "label": "Grade 4",
+      "focus": "Homophones, common suffixes, irregular plurals, frequently misspelled words",
+      "sets": [
+        {
+          "name": "Homophones",
+          "words": ["their", "there", "they're", "your", "you're", "its", "it's", "to", "too", "two", "hear", "here", "whose", "who's", "threw", "through", "weather", "whether", "peace", "piece", "plain", "plane", "right", "write", "sea", "see", "some", "sum", "tail", "tale", "wait", "weight", "waist", "waste", "break", "brake", "flour", "flower", "knight", "night", "hole", "whole", "meat", "meet", "road", "rode", "steal", "steel"]
+        },
+        {
+          "name": "Words ending in -tion and -sion",
+          "words": ["action", "addition", "attention", "caution", "collection", "condition", "direction", "discussion", "division", "education", "election", "expression", "fraction", "information", "invention", "location", "mention", "motion", "nation", "operation", "permission", "portion", "position", "question", "section", "station", "tension", "vacation", "version", "vision"]
+        },
+        {
+          "name": "Irregular plurals",
+          "words": ["babies", "benches", "boxes", "calves", "children", "cities", "countries", "dishes", "feet", "geese", "halves", "heroes", "knives", "leaves", "lives", "loaves", "men", "mice", "oxen", "potatoes", "sheep", "shelves", "stories", "teeth", "thieves", "tomatoes", "wolves", "women"]
+        },
+        {
+          "name": "Frequently misspelled",
+          "words": ["almost", "already", "another", "answer", "beautiful", "believe", "breathe", "brought", "built", "business", "caught", "clothes", "cousin", "decide", "different", "enough", "especially", "everybody", "favorite", "February", "finally", "friend", "guess", "height", "holiday", "immediately", "knowledge", "library", "minute", "neighbor", "often", "people", "probably", "receive", "remember", "says", "separate", "similar", "since", "sincerely", "straight", "surprise", "though", "thought", "tomorrow", "tonight", "until", "usually", "Wednesday", "weird"]
+        }
+      ]
+    },
+
+    {
+      "grade": "5",
+      "label": "Grade 5",
+      "focus": "Prefixes and suffixes, introductory Greek and Latin roots, academic vocabulary",
+      "sets": [
+        {
+          "name": "Prefixes",
+          "words": ["disagree", "disappear", "disappoint", "dishonest", "illegal", "immature", "impossible", "incorrect", "independent", "informal", "international", "irregular", "misbehave", "mislead", "misspell", "nonfiction", "nonsense", "overcome", "prehistoric", "prepare", "preview", "rearrange", "rebuild", "recycle", "refund", "subheading", "submarine", "subtract", "superior", "supermarket", "transfer", "transform", "transport", "unable", "uncertain", "unusual"]
+        },
+        {
+          "name": "Suffixes",
+          "words": ["ability", "actor", "adventurous", "agreement", "argument", "assistance", "attendance", "celebration", "comfortable", "courageous", "creative", "curious", "dangerous", "decision", "dependable", "difference", "employment", "enjoyment", "excitement", "famous", "friendship", "generous", "gracious", "happiness", "helpful", "hopeless", "importance", "invisible", "joyful", "kindness", "laughable", "loneliness", "marvelous", "membership", "movement", "nervous", "ownership", "painful", "peaceful", "poisonous", "powerful", "reliable", "responsible", "sadness", "sensible", "statement", "thoughtful", "valuable"]
+        },
+        {
+          "name": "Greek and Latin roots, introductory",
+          "words": ["aquarium", "aquatic", "audible", "audience", "auditorium", "autograph", "automatic", "bicycle", "biography", "biology", "century", "chronic", "dictate", "dictionary", "geography", "geology", "graph", "inspect", "manual", "manufacture", "microscope", "migrate", "photograph", "portable", "predict", "report", "respect", "scribble", "signature", "spectator", "telegraph", "telephone", "telescope", "visible", "vision", "volume"]
+        },
+        {
+          "name": "Academic vocabulary",
+          "words": ["analyze", "compare", "conclude", "contrast", "define", "demonstrate", "describe", "determine", "develop", "evaluate", "evidence", "examine", "explain", "identify", "illustrate", "indicate", "infer", "interpret", "observe", "organize", "paraphrase", "procedure", "relevant", "represent", "respond", "summarize", "support", "symbolize"]
+        }
+      ]
+    },
+
+    {
+      "grade": "6",
+      "label": "Grade 6",
+      "focus": "Latin and Greek roots, academic vocabulary, advanced spelling patterns",
+      "sets": [
+        {
+          "name": "Latin roots",
+          "words": ["benefit", "benevolent", "capable", "capture", "contradict", "credible", "credit", "describe", "dictator", "exclude", "exclusive", "fracture", "fragment", "incredible", "inject", "interject", "manuscript", "mobile", "mortal", "motivate", "portable", "project", "reject", "rupture", "script", "sequence", "structure", "tangible", "tractor", "transcript", "verdict", "verify", "vocal", "vocation"]
+        },
+        {
+          "name": "Greek roots",
+          "words": ["anonymous", "antibiotic", "astronomy", "biosphere", "chronological", "democracy", "demographic", "dialogue", "epidemic", "geometry", "homogeneous", "hydrate", "hypothesis", "metropolis", "monologue", "monopoly", "pandemic", "paragraph", "philosophy", "photosynthesis", "physical", "protagonist", "psychology", "sympathy", "symphony", "synonym", "synthesis", "technology", "thermometer"]
+        },
+        {
+          "name": "Academic vocabulary",
+          "words": ["abstract", "accurate", "adequate", "alternative", "ambiguous", "analysis", "approach", "appropriate", "assume", "category", "comprehend", "concept", "consequence", "considerable", "consistent", "constitute", "context", "contribute", "criteria", "cumulative", "deduce", "distinct", "emphasize", "establish", "evident", "factor", "feature", "function", "imply", "initial", "integrate", "justify", "method", "obtain", "occur", "perceive", "potential", "principle", "process", "require", "significant", "source", "specific", "sufficient", "theory", "vary"]
+        },
+        {
+          "name": "Frequently misspelled, middle school",
+          "words": ["accommodate", "achieve", "acquire", "apparent", "athlete", "calendar", "cemetery", "colleague", "committee", "conscience", "conscious", "definitely", "dilemma", "embarrass", "environment", "exaggerate", "existence", "familiar", "foreign", "government", "grateful", "guarantee", "harass", "jewelry", "judgment", "leisure", "license", "maintenance", "maneuver", "mischievous", "necessary", "noticeable", "occasion", "occurrence", "parallel", "particularly", "perseverance", "persuade", "playwright", "possession", "precede", "privilege", "pronunciation", "questionnaire", "recommend", "referred", "restaurant", "rhythm", "ridiculous", "schedule", "sergeant", "souvenir", "succeed", "temperature", "thorough", "twelfth", "tyranny", "vacuum", "vehicle", "vengeance", "villain"]
+        }
+      ]
+    },
+
+    {
+      "grade": "7",
+      "label": "Grade 7",
+      "focus": "Morphology, academic vocabulary, literary terminology, commonly confused words",
+      "sets": [
+        {
+          "name": "Roots and morphology",
+          "words": ["ambiguous", "ambivalent", "antecedent", "antipathy", "benediction", "circumference", "circumvent", "cohesive", "concurrent", "conducive", "deference", "deviate", "dissent", "egocentric", "empathy", "eulogy", "extract", "incoherent", "inscription", "intercede", "introspective", "malevolent", "malicious", "misnomer", "obstruct", "omnipotent", "omniscient", "precedent", "prescribe", "proponent", "retract", "retrospect", "subordinate", "subsequent", "transcend"]
+        },
+        {
+          "name": "Academic vocabulary",
+          "words": ["accumulate", "adapt", "advocate", "allocate", "alter", "arbitrary", "assess", "attribute", "clarify", "coherent", "commodity", "compile", "component", "comprise", "conform", "constrain", "convey", "correspond", "denote", "derive", "differentiate", "diminish", "discrete", "dominate", "elaborate", "eliminate", "emerge", "enhance", "ensure", "exert", "exhibit", "facilitate", "fluctuate", "generate", "implement", "incorporate", "inevitable", "innovate", "intervene", "isolate", "manipulate", "modify", "negate", "notion", "prohibit", "pursue", "refine", "reinforce", "restrain", "retain", "sustain", "transmit", "undertake", "utilize"]
+        },
+        {
+          "name": "Literary terms",
+          "words": ["allegory", "alliteration", "allusion", "analogy", "anecdote", "antagonist", "characterization", "climax", "connotation", "denotation", "dialect", "diction", "exposition", "figurative", "foreshadowing", "genre", "hyperbole", "imagery", "irony", "metaphor", "motif", "narrative", "onomatopoeia", "personification", "resolution", "rhetoric", "satire", "simile", "soliloquy", "symbolism", "theme", "tone"]
+        },
+        {
+          "name": "Commonly confused",
+          "words": ["accept", "except", "affect", "effect", "allusion", "illusion", "among", "between", "assure", "ensure", "insure", "capital", "capitol", "cite", "site", "sight", "complement", "compliment", "council", "counsel", "desert", "dessert", "elicit", "illicit", "eminent", "imminent", "farther", "further", "formally", "formerly", "imply", "infer", "lay", "lie", "loose", "lose", "moral", "morale", "passed", "past", "personal", "personnel", "precede", "proceed", "principal", "principle", "stationary", "stationery", "than", "then"]
+        }
+      ]
+    },
+
+    {
+      "grade": "8",
+      "label": "Grade 8",
+      "focus": "Advanced academic vocabulary, advanced roots, content-area terms, advanced spelling",
+      "sets": [
+        {
+          "name": "Advanced academic vocabulary",
+          "words": ["acquisition", "adjacent", "aggregate", "ambiguity", "analogous", "anomaly", "assertion", "autonomy", "bias", "coherence", "coincide", "collaborate", "compensate", "comprehensive", "conceive", "confer", "consensus", "contemporary", "contradict", "criterion", "deduction", "deficient", "delineate", "depict", "deviation", "discern", "disparity", "diverse", "empirical", "equivalent", "explicit", "exploit", "extrapolate", "feasible", "fundamental", "hierarchy", "hypothetical", "implicit", "inherent", "integral", "intrinsic", "invoke", "legitimate", "mediate", "negligible", "nominal", "objective", "paradigm", "paradox", "parameter", "phenomenon", "plausible", "predominant", "presume", "prevalent", "prospective", "rationale", "reciprocal", "refute", "reluctance", "subjective", "substantiate", "tentative", "ubiquitous", "underlying", "validate", "viable"]
+        },
+        {
+          "name": "Advanced roots",
+          "words": ["anachronism", "anthropology", "antithesis", "aristocracy", "belligerent", "cardiovascular", "chronicle", "circumspect", "corroborate", "demagogue", "dermatology", "dissuade", "egregious", "equivocal", "exonerate", "gregarious", "incognito", "incredulous", "magnanimous", "malfeasance", "metamorphosis", "misanthrope", "monotonous", "obsolete", "panacea", "philanthropy", "polyglot", "posthumous", "primeval", "recalcitrant", "renaissance", "somnolent", "tenacious", "verbose", "vivacious"]
+        },
+        {
+          "name": "History and civics terms",
+          "words": ["abolition", "amendment", "bicameral", "bureaucracy", "capitalism", "censure", "coalition", "colonization", "commerce", "compromise", "confederation", "constitution", "delegate", "democracy", "diplomacy", "emancipation", "federalism", "immigration", "impeachment", "industrialization", "jurisdiction", "legislature", "monarchy", "nullification", "ratification", "referendum", "representative", "republic", "secession", "sovereignty", "suffrage", "tariff", "treaty", "unconstitutional"]
+        },
+        {
+          "name": "Frequently misspelled, advanced",
+          "words": ["abbreviate", "acknowledgment", "acquaintance", "aggressive", "allegiance", "amateur", "apparatus", "camaraderie", "changeable", "colonel", "conscientious", "controversy", "correspondence", "curiosity", "deceive", "discipline", "entrepreneur", "exhilarate", "fascinate", "fluorescent", "gauge", "grievance", "hindrance", "hypocrisy", "indispensable", "inoculate", "liaison", "lieutenant", "millennium", "miniature", "minuscule", "misspell", "occurred", "pastime", "prejudice", "prerogative", "publicly", "receipt", "reminiscent", "renowned", "sacrilegious", "siege", "silhouette", "subtle", "supersede", "threshold", "unanimous", "unnecessary", "withhold"]
+        }
+      ]
+    }
+  ]
+}

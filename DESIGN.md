@@ -4,12 +4,14 @@ A question-and-answer study game for two kids: **spelling** (spoken word, typed 
 **multiplication facts**. Spaced repetition underneath both, per-child progress, runs in a browser
 with no backend.
 
-Status: **the multiplication game is playable end to end** (`src/core/`, `src/storage/`, `src/game/`,
-`src/ui/`, 123 tests). Pick a child, play times tables, and the boxes, the estimator and the archive
-all move; progress persists across a browser restart and can be exported to a file and restored from
-it. Spelling has no content and no game yet, and no progress chart is drawn for either subject.
-Build order step 3 of 9 done; step 4 is acquiring the word lists, which is blocked on the licensing
-question.
+Status: **the multiplication game is playable end to end, and the spelling words are in** (139 tests).
+Pick a child, play times tables, and the boxes, the estimator and the archive all move; progress
+persists across a browser restart and can be exported to a file and restored from it. The spelling
+word list is imported and drives the session engine in tests, but there is **no spelling game yet**:
+it needs a way to say the word aloud. No progress chart is drawn for either subject.
+
+Build order steps 0-4 of 9 done. Next is step 5, the audio pipeline — and per that step, **speech
+synthesis first**, so the spelling game works before any recordings exist.
 
 This file is the design record and the thing that carries context between sessions. Keep it current
 as work lands. When a decision is superseded, **replace it and say it was replaced** — do not stack
@@ -1058,12 +1060,17 @@ stored; nothing shows either yet.
    possible content. That paid off — three real defects surfaced only by playing it, all recorded
    above: the missed-item echo, sessions that ended without writing a summary, and phantom items left
    by introductions that ran ahead of the child.
-4. **Word lists.** Licensing resolved — no longer blocked. Import the ~1,145-word seed bank: resolve
-   the 32 duplicates (higher grade wins), correct the Dolch recall errors against a second source,
-   run a frequency sanity pass over the grade-4-8 placements, and reshape into what the deck wants —
-   a word, a grade, and its set membership, the last kept because the homophone and commonly-confused
-   sets are exactly what the cloze feature needs. Commit with a notices file. Growing the corpus is
-   open question 11, not part of this step.
+4. **Word lists.** Done. The ~1,145-word seed bank is in `src/content/`, kept **verbatim** as JSON
+   with every change made in code beside it, so the input stays auditable and the transformation
+   stays inspectable. Duplicates resolved higher-grade-wins, words lowercased, kindergarten carried
+   as band `0` and displayed as "K", set membership preserved. `NOTICES.md` records provenance, the
+   two lists deliberately not used, and the known defects. 16 tests, including a session played
+   end to end on the spelling deck — the same engine as multiplication, with nothing changed but the
+   deck, which is what step 3 was ordered first to prove.
+
+   **Deliberately not done** (user's call — tune later, get the game working first): the Dolch recall
+   errors are uncorrected and the grade-4-8 placements are unchecked. Both are recorded in
+   `NOTICES.md`. Growing the corpus is open question 11.
 5. **Audio pipeline.** Build-time fetch, transcode, attribution generation. Speech-synthesis
    fallback first so the game works before the corpus exists.
 6. **Spelling game**, including the blacklist button.
