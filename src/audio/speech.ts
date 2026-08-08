@@ -12,12 +12,20 @@
  * recordings become an upgrade rather than a prerequisite.
  */
 
-/** How a word gets said. `speak` resolves when the word has finished being said. */
+/**
+ * How a word gets said.
+ *
+ * `speak` resolves **once the word has been said and the child could begin** —
+ * not necessarily when all sound has stopped. A speaker that repeats the word
+ * for clarity keeps going after resolving, because making the caller wait for
+ * reinforcement it did not ask for would delay the timing clock behind sound the
+ * child stopped needing after the first pass.
+ */
 export interface Speaker {
   /** False when this device cannot speak at all, which the game has to handle rather than hang on. */
   readonly available: boolean;
   speak(word: string): Promise<void>;
-  /** Stop anything in progress. Called when leaving a question, so a stale word cannot arrive late. */
+  /** Stop anything in progress, including repeats still to come. */
   cancel(): void;
 }
 
@@ -116,6 +124,85 @@ export class BrowserSpeaker implements Speaker {
 
   cancel(): void {
     if (this.available) speechSynthesis.cancel();
+  }
+}
+
+/**
+ * How many times a word is said.
+ *
+ * Three, because a short word is over almost before it registers — a synthesised
+ * "cut" gives a child perhaps a third of a second of signal, and asking them to
+ * spell what they only half heard tests their hearing rather than their
+ * spelling. Long words do not need it and get it anyway; the cost is a few
+ * seconds of sound they can type straight through, which is cheaper than a
+ * rule that has to decide what counts as short.
+ */
+export const SAY_TIMES = 3;
+
+/**
+ * The gap between repeats.
+ *
+ * Long enough that the repeats are heard as separate sayings rather than a
+ * stutter, short enough not to feel like waiting. Reduce it and the word runs
+ * into itself; lengthen it and the child sits through silence.
+ */
+export const SAY_GAP_MS = 700;
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Says a word several times over, whatever the underlying speaker is.
+ *
+ * A wrapper rather than something baked into `BrowserSpeaker`, because the
+ * problem it solves is not a synthesis problem: a short *recording* of "cut" is
+ * just as easy to miss, so the repetition should survive the arrival of human
+ * recordings rather than having to be written again.
+ *
+ * It resolves after the **first** saying and keeps going in the background. That
+ * is what lets the timing clock start when the child could actually begin,
+ * rather than trailing several seconds of reinforcement they may not have
+ * needed.
+ */
+export class RepeatingSpeaker implements Speaker {
+  readonly #inner: Speaker;
+  readonly #times: number;
+  readonly #gapMs: number;
+  /** Bumped on every new word and on cancel, so an in-flight sequence knows it is stale. */
+  #run = 0;
+
+  constructor(inner: Speaker, times: number = SAY_TIMES, gapMs: number = SAY_GAP_MS) {
+    this.#inner = inner;
+    this.#times = times;
+    this.#gapMs = gapMs;
+  }
+
+  get available(): boolean {
+    return this.#inner.available;
+  }
+
+  async speak(word: string): Promise<void> {
+    const run = ++this.#run;
+    await this.#inner.speak(word);
+    if (run !== this.#run) return;
+    void this.#repeat(word, run);
+  }
+
+  async #repeat(word: string, run: number): Promise<void> {
+    for (let said = 1; said < this.#times; said += 1) {
+      await delay(this.#gapMs);
+      // A new word, or a cancel, retires this sequence. Without the check a
+      // stale repeat would talk over the next question.
+      if (run !== this.#run) return;
+      await this.#inner.speak(word);
+      if (run !== this.#run) return;
+    }
+  }
+
+  cancel(): void {
+    this.#run += 1;
+    this.#inner.cancel();
   }
 }
 

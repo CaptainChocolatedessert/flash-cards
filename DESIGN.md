@@ -688,6 +688,26 @@ for the easiest words.
 Spelling questions are spoken. Decided: **use real human recordings where they exist, synthesis as
 the fallback.**
 
+### Each word is said three times
+
+A short word is over almost before it registers — a synthesised "cut" is perhaps a third of a second
+of signal, and asking a child to spell what they only half heard tests their hearing rather than
+their spelling. So every word is said three times, with a short silence between.
+
+**Built as a wrapper around any speaker, not inside the synthesiser**, because this is not a synthesis
+problem: a short *recording* of "cut" will be exactly as easy to miss, so the repetition needs to
+survive the arrival of human recordings rather than being written a second time.
+
+Long words get the repeats too. A rule that decided what counts as "short" would be one more thing to
+tune and get wrong, and the cost of over-repeating is a few seconds of sound the child can type
+straight through — because:
+
+**Saying the word resolves after the *first* pass, not the last.** The timing clock starts there,
+since that is when the child could actually begin; waiting for reinforcement they may not have needed
+would push the clock several seconds late and make everyone look like a slow typist. The remaining
+repeats continue in the background and are cut off the moment the question is answered, so a stale
+repeat can never talk over the next word.
+
 ### Source: Wikimedia
 
 **Lingua Libre** (a Wikimedia project of volunteer-recorded single words, CC-BY-SA, bulk

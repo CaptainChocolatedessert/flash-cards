@@ -8,7 +8,7 @@
  */
 
 import type { ProgressStore, SubjectId } from "../storage/index.js";
-import { BrowserSpeaker } from "../audio/speech.js";
+import { BrowserSpeaker, RepeatingSpeaker } from "../audio/speech.js";
 import type { Speaker } from "../audio/speech.js";
 import { MultiplicationScreen } from "./multiplication.js";
 import { ProfileScreen } from "./profiles.js";
@@ -22,7 +22,7 @@ export class App {
    * speaker created fresh at the start of each session would spend the first
    * word or two without a chosen voice.
    */
-  readonly #speaker: Speaker = new BrowserSpeaker();
+  readonly #speaker: Speaker = new RepeatingSpeaker(new BrowserSpeaker());
 
   constructor(store: ProgressStore, root: HTMLElement) {
     this.#store = store;
