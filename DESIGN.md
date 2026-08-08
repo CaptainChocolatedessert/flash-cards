@@ -34,8 +34,8 @@ single session is a possible future feature, deliberately not designed for now.
 **No parent view.** The kids see the same progress readout a parent would. There is no separate
 authenticated surface, no gating, no hidden metrics.
 
-**No placement test.** Decided in conversation: both kids start at a low band and get easy wins in
-the first session. See "Climbing the ladder" for why this costs almost nothing given the scheduler.
+**No placement test.** Decided in conversation: both kids start easy and get wins in the first
+session. Proficiency is inferred continuously from ordinary play instead — see "Progression".
 
 ---
 
@@ -133,7 +133,7 @@ play at all.
 | 1 | later this session | just missed, or brand new |
 | 2 | 1 day | |
 | 3 | 3 days | |
-| 4 | 7 days | counts as "handled" for frontier purposes |
+| 4 | 7 days | effectively known; timed from here on |
 | 5 | 21 days | |
 | 6 | retired | stops appearing; still counted in the readout |
 
@@ -149,106 +149,200 @@ spelling, where a misspelling is a genuine gap rather than a slip. **Flagged as 
 proves demoralising in practice, "back one box" is the gentler variant. Decide from observation, not
 in advance.
 
-### First-exposure fast-track — the thing that makes starting low free
+### First-exposure fast-track — an already-known word costs one question
 
 **A word answered correctly on its very first exposure goes straight to box 5, not box 2.**
 
-This is load-bearing and easy to leave out. Without it, a kid starting three grade bands below their
-real level has to grind every already-known word up through the full 1→3→7-day ladder, which is
-about eleven days per band minimum. Four bands is a month and a half of climbing before the game
-ever shows them a word they don't know. That would kill it.
+Load-bearing, and easy to leave out. Without it, every already-known word has to be ground up through
+the full 1→3→7-day ladder — eleven days minimum before it stops being asked — and a kid working
+below their level would spend weeks re-proving vocabulary they already have. That would kill it.
 
-With the fast-track, a band of words the kid already knows clears at roughly one question per word
-and never comes back. Only genuinely unknown words enter the Leitner cycle. **Starting low is cheap
-precisely because of this rule** — it is what makes "no placement test" a viable decision rather
-than a slow one.
+With the fast-track, an already-known word costs about one question and never comes back. Only
+genuinely unknown words enter the Leitner cycle. **This is what makes "no placement test" a viable
+decision rather than a slow one**, and it is also what lets the introduction weighting afford the
+occasional wasted probe into an easy grade.
+
+It has a second role in the progression model: a first-exposure result is the *only* kind that
+carries information about a grade, so the fast-track and the proficiency estimator read the same
+event. Neither should be changed without checking the other.
 
 ---
 
-## Levels
+## Progression — a proficiency profile, not a ladder
 
-Level is a **per-subject** concept, not a global grade number. The two games ladder along completely
-different axes and forcing them into one scale would be arbitrary.
+**Levels are gone.** No bands, no units, no advancing, no unlocking. **Superseded 2026-08-08** by the
+user's reframing, which is better and which dissolves rather than solves the problem the ladder kept
+running into.
 
-### Climbing the ladder — bands in order, taught to completion
+### The reframing
 
-**Bands are worked in order and each is taught to completion. There is no probing ahead.**
+**The Leitner boxes already decide what to review.** Everything a kid has met is scheduled by its
+box, and that machinery needs no concept of level at all. So the only question a progression system
+actually has to answer is:
 
-An earlier draft drew the pool mostly from the current band plus a ~10-15% probe rate from the band
-above, advancing a "frontier" when probes came back correct. **Dropped 2026-08-08**, on the user's
-question of how a kid ever actually *learns* a level that way. They don't: probing detects readiness,
-it does not teach a band, and the goal here is that every word in a band gets learned.
+> **Which new words should enter the queue next?**
 
-**The probe was solving a problem the first-exposure fast-track had already solved.** Its purpose was
-to avoid grinding through bands below the kid's real level — and the fast-track means those bands
-cost roughly one question per word anyway. The first band that *doesn't* clear quickly is their
-actual level, discovered by arriving at it. No detection mechanism is needed; the slowdown is the
-signal.
+That is a much smaller question than "what level are they on", and it does not need the word list
+carved into bands to answer it. Two prior designs — the probing frontier, then sequential bands
+taught to completion — were both attempts to make a ladder produce that answer. The ladder was never
+the requirement.
 
-**Advance at ~90% of the band in box 4+, not 100%.** Stragglers keep circulating in the review mix
-while the next band opens. One impossible word must not be able to block progress, and nothing is
-ever abandoned.
+**Explicitly rejected: capping the word list to make progression tracking feasible.** That is putting
+the measurement in front of the task (the user's phrase, and the right call). The ~120-word band cap
+from the previous draft is dropped; the corpus should be as large as can be sourced. See "Costs" at
+the end of this section — this is not free.
 
-There is no re-testing and no visible pass/fail. Show a "you unlocked Grade 5 words!" moment for the
-motivation, but the decision behind it is data-driven, not a test the kid has to sit.
+### Estimating proficiency per grade
 
-### Spelling bands
+Track, per child, an estimate of **the probability they would correctly spell a word they have never
+seen before, at each grade level.** That is the quantity the whole system needs, and it is what the
+display shows.
 
-Grade-banded word lists, roughly grade 2 through early high school. Candidate sources, all freely
-available:
+**Estimate from first-exposure results only.** This is load-bearing and easy to get wrong: once a
+word is in the box system, getting it right tells you about *that word's rehearsal state*, not about
+underlying grade-N ability. Feeding review outcomes into the estimator would make every grade drift
+upward toward 100% as words get learned, and the chart would report the kid's practice history
+instead of their ability. **Only virgin words carry information about grades.**
+
+Note this makes the estimate self-consistently about *untried* words, which is exactly the quantity
+needed for deciding what to introduce.
+
+#### The small-sample problem, and the way through
+
+Early on there will be a handful of data points per grade, and a bar computed from three answers
+must not look as authoritative as one computed from two hundred.
+
+**Use one latent ability estimate plus per-grade difficulty, rather than twelve independent
+counters.** An Elo-style rating is the pragmatic form: the child carries a rating, each grade carries
+a difficulty, the predicted success probability is the logistic of the difference, and every
+first-exposure answer nudges the rating by an amount proportional to how surprising it was. This is
+essentially online Rasch estimation, and it has three properties that matter here:
+
+- **Every answer informs every grade.** A miss at grade 7 lowers the whole curve, so grades with
+  little direct data still get a sensible estimate.
+- **The profile is monotone by construction** — higher grade, lower predicted success — which is
+  almost always true and is exactly the prior worth encoding.
+- **It is online.** No batch fitting, no history replay, one number to store.
+
+**Allow per-grade deviation from the pooled curve only as evidence accumulates.** A kid can be
+genuinely non-monotone — strong on technical vocabulary, weak on common irregulars — and a pure
+single-parameter model cannot express that. The principled version is hierarchical shrinkage: each
+grade gets a residual that starts pinned at zero and is allowed to move as its own sample grows.
+Start with the pooled model alone; add residuals when there is enough data for them to mean anything.
+
+**Track uncertainty and show it.** A grade with few samples should render faded or with a visible
+interval. A confident-looking bar built from nothing is the same class of error as a diagnostic that
+cannot distinguish its outcomes.
+
+### Choosing where new words come from
+
+Weight each grade by **how much value a new word from it would have**, and sample the introduction
+pool from that distribution.
+
+The weight is a **peaked function of the estimated success probability** — near zero where the kid
+is already proficient (nothing left to teach) and near zero where they are far out of their depth
+(nothing but frustration), with the mass concentrated where they are actually learning. A Gaussian
+bump in probability space is enough: one parameter for where the peak sits, one for how wide it is.
+
+#### Where the peak belongs, and why it is not 50%
+
+Two pressures point in opposite directions, and the target is the compromise:
+
+- **Learning value peaks at a low success rate.** A word answered correctly on first exposure teaches
+  nothing — the fast-track retires it immediately. Only words the kid gets *wrong* enter the Leitner
+  cycle and get learned. Pure information-efficiency would introduce words they will almost certainly
+  miss.
+- **Morale peaks at a high success rate.** A stream of failures is how a kid stops playing.
+
+**Start the target around 70% predicted success** and expect to tune it. High enough that most of a
+session feels like competence, low enough that roughly one introduction in three is a word they
+actually needed. This is a knob, not a finding — it should be revisited after watching them play.
+
+### How many new words — a separate question
+
+Keep **volume** and **mix** apart. The weighting above decides *where* new words come from; it should
+not also decide *how many*.
+
+**Gate introductions on unfinished business: count the words currently sitting in boxes 1-2, and
+introduce new ones only while that count is below a ceiling.** A kid with thirty words churning in
+the low boxes does not need more; they need to finish those. Without this governor a run of misses
+at the frontier compounds — misses put words in box 1, and a system that keeps introducing regardless
+buries them.
+
+### The kid's difficulty control
+
+The user asked for a way for the kids to say they want harder or easier words. **This maps to exactly
+one thing: it shifts the target success rate.** Lower target, harder words.
+
+Elegant because it makes the control genuinely meaningful rather than cosmetic, and because it needs
+no new machinery. **Label it "harder"/"easier", never expose the number** — the direction is
+inverted (a *lower* success target means *harder* words) and that is a guaranteed source of
+confusion.
+
+### The display
+
+A **bar chart across grade levels, showing estimated probability of getting a new word right.** The
+user's suggestion, and it is the natural readout for the model above — the thing the system computes
+is the thing the kid sees, with no translation layer.
+
+Two additions worth building:
+
+- **Render uncertainty**, per the estimator note above.
+- **Mark the zone new words are currently coming from.** Then the chart shows both what they know and
+  where the game is working, which makes the difficulty control legible — move the slider, watch the
+  highlighted zone shift.
+
+**One thing the ladder had and this does not: a discrete moment of celebration.** "You unlocked Grade
+5!" has no equivalent when nothing unlocks. Replace it with milestones fired off the chart — a grade
+crossing 80%, a personal best — rather than letting the reward disappear.
+
+### Costs of dropping the cap
+
+Stated plainly, because the previous draft claimed the opposite as a benefit:
+
+- **The corpus goes back to thousands of words**, not ~1,100. Audio returns to roughly 60MB, and the
+  licensing research covers the full lists rather than a subset.
+- **Grade labels are still required** — the chart and the weighting are both indexed by grade. So the
+  sourcing work is unchanged in kind, only larger.
+
+One genuine improvement, though: **label noise at the seams stops mattering.** The ladder was brittle
+at band boundaries because progression gated on them. Here a mislabelled word slightly perturbs one
+estimate and nothing else. A later refinement, if the data ever justifies it, is letting the Elo
+learn per-word difficulty and correct the published labels — plausible over a year with two kids,
+not a plan.
+
+### Multiplication is exempt from all of this
+
+**Load the whole table to 12 at once and let Leitner handle it.** 91 distinct facts is not enough
+material to need an introduction policy, and building one would be machinery in search of a problem.
+The volume governor above still applies — make all 91 *eligible*, but don't dump them all into box 1
+in one session.
+
+**`a×b` and `b×a` are the same fact for scheduling**, presented in both orders. 12×12 is 169 ordered
+pairs but only 91 distinct facts, and treating them separately doubles the deck for no learning gain.
+
+**Track proficiency by times table — 1s, 2s, 3s … 12s.** Twelve bars, parallel to the spelling grade
+chart, so the two games' progress displays read as siblings without sharing any mechanism. A fact
+belongs to two tables (7×8 counts toward both the 7s and the 8s); count it in both for the chart,
+keep it single for scheduling.
+
+For the 8th grader this is likely all fluent already, so the fast-track will clear it quickly and the
+real value is the **timed fluency** mode rather than learning. If the subject is exhausted, the
+natural extensions are squares past 12, or division facts as the inverse.
+
+### Spelling word lists
+
+Grade-labelled, as large as can be sourced. Candidates, all freely available:
 
 - **Dolch sight words** (1936, public domain) — 220 service words + 95 nouns, pre-K to grade 3.
 - **Fry's 1000 Instant Words** — banded in hundreds, roughly grades 1-9. Widely reproduced.
 - **Scripps "Words of the Champions"** — 4,000 words released free as a PDF, tiered One/Two/Three
   Bee (roughly grades 1-3, 4-5, 6-8). Carries the upper end where Dolch and Fry run out.
-- **SCOWL** (Spell Checker Oriented Word Lists) — public domain, bucketed by frequency. Useful as a
-  *difficulty proxy* to smooth band boundaries or extend past grade 8.
+- **SCOWL** (Spell Checker Oriented Word Lists) — public domain, bucketed by frequency. Useful both
+  as a difficulty proxy where grade labels are missing and to extend past grade 8.
 
 **Licensing is an open question, not a settled one** — see below. Verify before committing any list
 to a public repo.
-
-### Band size — set by the completeness requirement
-
-Because bands are taught to completion, size is a hard constraint rather than a preference.
-
-**Target ~120 words per band.** At the frontier a kid absorbs maybe 10-20 genuinely new words a week,
-so a band containing ~50 unknown words is three to five weeks of work — a reasonable cadence for
-something called a "level". At 250 words it would be an entire semester and would stop feeling like
-one. Below the frontier, ~120 already-known words clear in two or three sessions.
-
-**Split each band into units of ~20-25 words** — "Grade 5, set 3 of 5". Three to five weeks is far
-too distant a finish line for a child; the unit is the milestone they should actually see.
-
-A band is a *representative sample* of a grade's difficulty, not complete coverage of what that grade
-teaches. 120 words is ample both to place a kid and to be worth learning.
-
-**Total corpus: roughly grade 2 through grade 10, so ~9 bands, ~1,100 words.** Note this is far
-smaller than the 4,000-word figure an earlier draft assumed. The completeness requirement *shrinks*
-the corpus rather than growing it, which also makes the audio pipeline substantially cheaper and the
-licensing research narrower.
-
-### Multiplication buckets
-
-Not grades. Four buckets, ordered by how they are actually taught:
-
-| Bucket | Facts |
-|---|---|
-| A | ×0, ×1, ×2, ×5, ×10 |
-| B | ×3, ×4 |
-| C | ×9, then ×6, ×7, ×8 |
-| D | ×11, ×12 |
-
-**`a×b` and `b×a` are the same fact for scheduling purposes**, presented in both orders. Treating
-them separately doubles the deck for no learning gain — 12×12 is 169 ordered pairs but only 91
-distinct facts.
-
-**Completeness needs no discussion here.** 91 distinct facts across four buckets is ~20-25 each,
-which is already the unit size the spelling bands have to be deliberately chopped down to reach. A
-bucket *is* a unit.
-
-For the 8th grader this is likely all fluent already, so the fast-track will clear it fast and the
-real value there is the **timed fluency** mode rather than learning. If the subject turns out to be
-exhausted, the natural extensions are squares past 12, or division facts as the inverse.
 
 ---
 
@@ -305,7 +399,7 @@ mode switch anyone has to think about.
 
 One confound to stay alert to: for the younger kid, spelling accuracy will be entangled with typing
 ability regardless of mode. If that shows up, letter tiles or a click-to-build input is the remedy
-for low bands.
+for the easiest words.
 
 ---
 
@@ -335,9 +429,9 @@ recordings once, transcodes to MP3 or M4A, and commits the result. Consequences 
 - **Transcoding is not optional.** Commons files are largely Ogg Vorbis, which Safari has
   historically not played. MP3 removes an entire class of platform bug for one build step.
 
-Rough size: ~1,100 words at ~15KB is under 20MB — comfortable for a Pages repo. Small enough that
-precaching becomes arguable, but the PWA note still stands: cache on demand, since nothing needs
-grade 9 audio on a device working through grade 4.
+Rough size: a few thousand words at ~15KB is on the order of 60MB. Fine for a Pages repo (the soft
+limit is 1GB) but firmly in the territory where the PWA note applies: **cache on demand, never
+precache.** Most of that corpus will never be reached by either child.
 
 **Store multiple recordings per word where Commons has them.** This is what makes the blacklist
 degrade gracefully instead of falling straight to synthesis.
@@ -391,7 +485,8 @@ one repo, each labelled.
 Per profile (one per child):
 
 - **Profile**: id, display name, created date.
-- **Per-subject level state**: current band/bucket, frontier position.
+- **Per-subject proficiency state**: the ability rating, per-grade (or per-times-table) residuals and
+  their sample counts, and the kid's difficulty-control setting.
 - **Per-item scheduling state**: box, due date, times seen, times correct, last result. Keyed by
   word, or by the normalised `min×max` form for multiplication facts.
 - **Performance history**: per attempt — the result, the elapsed time, and the keystroke timeline.
@@ -444,9 +539,12 @@ eventually contain some.
 - **Vite + TypeScript**, no framework to begin with. The sibling project reached a real settings UI
   in plain TS and never wanted React; start the same way and revisit if the UI becomes stateful
   enough to earn a framework.
-- **vitest** for the pure logic. The scheduler, the frontier advance rule, the fact normalisation
-  and the band assignment are all pure functions with no DOM and no storage, and they are where the
-  bugs will be. Keep them importable without a browser.
+- **vitest** for the pure logic. The scheduler, the proficiency estimator, the introduction weighting
+  and the fact normalisation are all pure functions with no DOM and no storage, and they are where
+  the bugs will be. Keep them importable without a browser. The estimator in particular is worth
+  testing against *simulated* children — a synthetic kid with a known true ability, checked for
+  whether the estimate converges to it — since that is the only way to know it works before a real
+  child has generated a year of data.
 - Node 24 / npm 11.
 
 **After adding any dependency**, regenerate the lockfile rather than accreting it:
@@ -470,8 +568,14 @@ CI runner.
    from school" is the feature most likely to be asked for later. It has no recordings and no cloze
    sentences, which makes speech synthesis load-bearing again rather than a fallback. Not designed
    for; worth not painting into a corner.
-6. **Band boundaries.** The ~120-word band size is settled; *which* words land in which band needs
-   real lists in hand. Expect the published grade labels to disagree with each other at the seams.
+6. **The target success rate for introductions** — 70% is a starting guess, not a finding. Needs
+   watching them play. Its two failure modes look different: too high and nothing new gets learned
+   because everything introduced is already known; too low and they stop playing.
+7. **When per-grade residuals should be allowed to move**, and how much. Too eager and the chart is
+   noise; too reluctant and a genuinely non-monotone kid is misread all year.
+8. **Whether the difficulty control should persist or decay.** A kid who picks "harder" during a good
+   session may not want it a week later, and a stuck setting is indistinguishable from a broken
+   estimator.
 7. **Mixing subjects in one session.** Wanted eventually, deliberately unplanned.
 
 ---
@@ -481,21 +585,25 @@ CI runner.
 Nothing below is started.
 
 0. **Repo, toolchain, Pages deploy.** Done — placeholder page only, no application code.
-1. **The pure core, tested, with no UI.** Leitner scheduler, first-exposure fast-track, band advance,
-   multiplication fact normalisation. This is where correctness lives and it is entirely headless.
+1. **The pure core, tested, with no UI.** Leitner scheduler, first-exposure fast-track, proficiency
+   estimator, introduction weighting and volume governor, multiplication fact normalisation. This is
+   where correctness lives and it is entirely headless.
 2. **`ProgressStore` over IndexedDB**, plus profile create/select, plus JSON export/import. Prove
    persistence survives a browser restart before building anything on top of it.
 3. **Multiplication game end to end.** Chosen before spelling deliberately: it needs no audio, no
    corpus and no licensing research, so it exercises the scheduler, the store, the session shell and
    the readout against the simplest possible content. Everything it proves, spelling reuses.
-4. **Word lists.** Acquire, verify licensing, band them, commit. Blocking on open question 1.
+4. **Word lists.** Acquire, verify licensing, attach grade labels, commit. Blocking on open
+   question 1.
 5. **Audio pipeline.** Build-time fetch, transcode, attribution generation. Speech-synthesis
    fallback first so the game works before the corpus exists.
 6. **Spelling game**, including the blacklist button.
 7. **Cloze sentences.** Last because it is the only part gated on a content-filtering problem, and
    the game is fully playable without it for every non-homophone word.
 8. **PWA** — manifest, service worker, `navigator.storage.persist()`, install prompt.
-9. **Progress readout.** Boxes, bands, accuracy, latency and typing-rate trends.
+9. **Progress readout.** The proficiency bar chart with its uncertainty and active zone, box counts,
+   session accuracy, and the typing-speed trend. Plus the harder/easier control, which is only
+   meaningful once the chart exists to show what it does.
 
 The ordering principle: **prove the scheduler and the store with the content type that has no
 external dependencies**, then add the content type that has several.

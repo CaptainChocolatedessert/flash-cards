@@ -17,10 +17,11 @@ Live at <https://captainchocolatedessert.github.io/flash-cards/>
 - **Multiplication** — facts to 12×12, bucketed the way they are taught rather than by grade.
 - **Spaced repetition** — Leitner boxes, so words you miss come back sooner and words you know
   retire.
-- **Levels that climb on their own** — no placement test. Start low, and the difficulty frontier
-  advances as proficiency shows in the data.
-- **Timed and untimed questions** — untimed measures whether they know it, timed measures recall
-  speed and typing speed as three separate signals.
+- **No levels and no placement test** — the game estimates how likely you are to spell a new word
+  from each grade, and picks new words from wherever you are actually learning. Plus a control to
+  ask for harder or easier words.
+- **Timed and untimed questions** — untimed for words still being learned, timed as a fluency check
+  once a word is known.
 - **Per-child progress**, stored locally, with a JSON export for backup.
 
 ## Development
