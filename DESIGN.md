@@ -485,16 +485,67 @@ and every graded list that exists is somebody's product.
   typing words correctly. The user caught this; it is recorded because it is an easy mistake to make
   twice.
 
+#### The seed list, and why its provenance cannot be taken on trust
+
+A K-8 bank of ~1,145 words exists from an earlier session, built against the NJSLS skill progression:
+Dolch for K-3, and for grades 4-8 sets organised around what the standards name at each grade —
+homophones, `-tion`/`-sion`, irregular plurals, prefixes and suffixes, Greek and Latin roots,
+academic vocabulary, and frequently-misspelled words. Its metadata states that grades 4-8 are "not a
+transcription of any published or copyrighted spelling program."
+
+**That claim is self-reported by the session that produced the words, and was audited 2026-08-08
+rather than believed.** What the audit found:
+
+- **Nothing was transcribed from a document.** That session had no outbound network — every fetch
+  failed — so every word came out of the model's memory.
+- **The Dolch sets corroborate that**: near-verbatim but with real errors (`giving` where Dolch has
+  `going`; `left`, `goat`, `woman`, `women` dropped). Transcription would be exact; recall produces
+  exactly this pattern.
+- **Scripps is ruled out specifically.** Overlap with the 2024 *Words of the Champions* text is low
+  and *falls* as grade rises — 3-20% across grades 5-8 — the opposite of what lifting from Scripps
+  would produce, since its hard end is where those grades would have come from.
+- **But none of that establishes independent creation.** A model can reproduce a memorised list, and
+  the sources that would matter most — Fundations, Wonders, Words Their Way, Sitton — are paywalled.
+  The same fact that makes them unusable makes them unverifiable. This is weak evidence of absence.
+
+**The exposure is narrower than the whole file, though.** Homophones, irregular plurals,
+`-tion`/`-sion` and root families are closed classes fixed by the *category*, not by editorial
+judgement — any competent homophone list is nearly the same list, because that is the language, and
+under *Feist* there is essentially nothing protectable to copy. Genuine selection judgement lives
+only in "academic vocabulary" and "frequently misspelled": about 400 of the 1,145 words. That is
+where residual risk actually sits.
+
+**Two defects found in the same audit, unrelated to licensing.** No misspellings — all 1,145 are real
+words, which is the check that most needed passing for a spelling teacher. But **32 words appear in
+two grades at once** (`their` in both grade-2 Dolch and grade-4 homophones; `contradict` in grades 6
+and 8), which the scheduler cannot accept: an item is keyed by its word and the estimator takes
+exactly one band per first exposure, so duplicates need a resolution rule before import. And since
+the Dolch portion demonstrably contains recall errors, the 4-8 portion should be assumed to carry
+comparable slips — real words placed in the wrong grade.
+
 #### The decision
 
-**Use a written list rather than a copied one, and grow it.** The seed is a K-8 bank of ~1,145 words
-built in an earlier session against the NJSLS skill progression: Dolch for K-3, and for grades 4-8
-sets written around what the standards actually name at each grade — homophones, `-tion`/`-sion`,
-irregular plurals, prefixes and suffixes, Greek and Latin roots, academic vocabulary, and
-frequently-misspelled words. Nothing in grades 4-8 is transcribed from any published program, which
-is what makes it usable at all.
+**Make provenance a property of a pipeline that can be re-run, not a claim in a metadata field.**
+Trying to prove a negative about an artifact of unknown origin is the wrong move; building the list
+so its origin is reproducible is the right one. Concretely:
 
-It is not sufficient as it stands, and the gaps are the build work:
+- **Vocabulary is drawn from SCOWL**, so every shipped word traces to a licensed source.
+- **The closed-class sets are regenerated mechanically** — homophones from a pronunciation dictionary
+  (same phonemes, different spelling), `-tion`/`-sion` by suffix match, irregular plurals from
+  morphology. Those come from computation, not from anyone's list, and they are most of the file.
+- **Grade and difficulty are assigned by our own formula** over frequency and computed orthographic
+  irregularity — how unpredictable a word's spelling is from its sound, which is what makes `colonel`
+  and `receipt` hard for children who know both words perfectly well, and which the comprehension-
+  based norms miss entirely.
+- **The seed list is kept as calibration and validation input, not shipped verbatim.** For the ~400
+  judgement-heavy words, a word ships only if our own model would have selected it for that grade
+  anyway — so the seed influences the candidate pool while the *selection*, which is the only
+  protectable part, is ours.
+
+This is strictly better than trusting either that earlier session or a fresh round of generation,
+because it replaces an unverifiable assertion with something re-runnable.
+
+The remaining gaps are the build work:
 
 - **Only ~830 words sit in grades 4-8**, which is the range that matters for a 6th and 8th grader.
   The K-3 portion is Dolch *reading* sight words (`the`, `said`, `look`) — the fast-track will clear
@@ -965,10 +1016,12 @@ stored; nothing shows either yet.
    possible content. That paid off — three real defects surfaced only by playing it, all recorded
    above: the missed-item echo, sessions that ended without writing a summary, and phantom items left
    by introductions that ran ahead of the child.
-4. **Word lists.** Licensing resolved — no longer blocked. Remaining work: import the written K-8
-   bank, extend it upward past grade 8, and grow grades 4-8 substantially using the curated words as
-   calibration anchors for a computed difficulty model over a licensed vocabulary source. Commit with
-   a notices file recording what came from where.
+4. **Word lists.** Licensing resolved — no longer blocked. The work is a **build-time pipeline**, not
+   a file to paste in: draw vocabulary from SCOWL, regenerate the closed-class sets mechanically,
+   assign grade and difficulty by our own formula over frequency and orthographic irregularity, and
+   use the seed bank as calibration and validation rather than shipped content. Extend past grade 8
+   so the older child has headroom. Resolve the 32 duplicate words. Commit the pipeline alongside its
+   output and a notices file, so the list's provenance can be re-derived rather than asserted.
 5. **Audio pipeline.** Build-time fetch, transcode, attribution generation. Speech-synthesis
    fallback first so the game works before the corpus exists.
 6. **Spelling game**, including the blacklist button.
