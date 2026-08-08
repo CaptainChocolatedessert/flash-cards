@@ -658,6 +658,16 @@ speed and counting attempts would reward typing gibberish quickly.
 start would fold the synthesiser's speaking rate into the child's typing speed, and a slower voice
 would read as a slower typist.
 
+**But the answer box takes focus immediately, and that distinction cost a bug.** The first build tied
+focus to the same moment as the clock, so anything typed before the synthesiser reported finishing
+went nowhere — reported from real use as losing the first letter of a word. Nobody waits for a voice
+to stop before spelling a word they recognised on the first syllable. The same mistake was in the
+repeat button, which took focus on click and only handed it back once the repeat had finished.
+
+The rule that resolves it: **focus at once, start the clock at the end of the word — unless they have
+already started typing, in which case leave it alone.** Rebasing the clock under someone mid-word
+would credit them with letters typed before the clock existed.
+
 ### Which mode when
 
 **The timing mode follows the box.** Low-box words (still being learned) are asked untimed; box 4+

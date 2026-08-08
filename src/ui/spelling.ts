@@ -253,8 +253,6 @@ export class SpellingScreen {
     card.className = "card";
     if (question === null) return card;
 
-    card.append(text("p", "Listen, then type the word."), this.#prompt());
-
     const form = document.createElement("form");
     const input = document.createElement("input");
     input.type = "text";
@@ -281,41 +279,62 @@ export class SpellingScreen {
       event.preventDefault();
       void this.#answer(input.value);
     });
-    card.append(form);
+
+    const asked = question.itemId;
+    card.append(
+      text("p", "Listen, then type the word."),
+      // Focus goes back to the box *before* the repeat starts, not after it
+      // ends — the same mistake as above. Clicking the button moves focus to
+      // it, and a child listening to the repeat is typing the moment they
+      // recognise the word, not once the voice has stopped.
+      this.#prompt(() => {
+        input.focus();
+        void this.#speaker.speak(asked);
+      }),
+      form,
+    );
 
     if (question.mode === "timed") card.append(text("p", "Quick as you can."));
 
-    // Say the word, then start the clock. Timing from when the word *starts*
-    // would fold the synthesiser's speaking rate into the child's typing speed,
-    // and a slower voice would look like a slower typist.
-    //
-    // The guard matters: answering before the word finishes cancels it, which
-    // resolves this promise late. Without the check it would reset the clock and
-    // wipe the keystrokes of whichever question happened to be on screen by then.
     this.#shownAt = Date.now();
-    const asked = question.itemId;
+    this.#keystrokes = [];
+
+    // Focus immediately, not when the word finishes.
+    //
+    // This is the whole bug: a child who starts typing on the first syllable was
+    // typing into nothing, because focus only arrived with the `end` event.
+    // Nobody waits politely for a synthesiser to finish before spelling a word
+    // they already recognised.
+    setTimeout(() => input.focus(), 0);
+
     void this.#speaker.speak(asked).then(() => {
+      // Answering early cancels the speech, which resolves this late; without
+      // the guard it would act on whatever question is on screen by then.
       if (this.#phase !== "asking" || this.#session.current?.itemId !== asked) return;
-      this.#shownAt = Date.now();
-      this.#keystrokes = [];
       input.focus();
+
+      // Start the clock when the word finishes — but only if they have not
+      // already started. Timing from the word's *start* would fold the
+      // synthesiser's rate into the child's typing speed, and a slower voice
+      // would read as a slower typist; rebasing on someone already mid-word
+      // would credit them with the letters they typed before the clock existed.
+      if (this.#keystrokes.length === 0) this.#shownAt = Date.now();
     });
 
     return card;
   }
 
   /** The speaker button. The word is never shown — that is the whole game. */
-  #prompt(): HTMLElement {
+  #prompt(onRepeat: () => void): HTMLElement {
     const row = document.createElement("div");
     row.className = "say-row";
     const again = document.createElement("button");
     again.type = "button";
     again.className = "say-again";
     again.textContent = "🔊 Say it again";
-    again.addEventListener("click", () => {
-      const question = this.#session.current;
-      if (question !== null) void this.#speaker.speak(question.itemId);
-    });
+    // Not a submit button, and not inside the form: Enter must always mean
+    // "answer", never "say it again", however focus happens to be sitting.
+    again.addEventListener("click", onRepeat);
     row.append(again);
     return row;
   }
