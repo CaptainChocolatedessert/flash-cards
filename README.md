@@ -4,10 +4,10 @@ A question-and-answer study game for two kids: **spelling** (a spoken word, type
 **multiplication facts**. Spaced repetition underneath both, separate progress for each child, and
 no backend — it runs entirely in the browser.
 
-**Status: early.** The headless core is built and tested — the scheduler, the proficiency estimator
-and the logic that picks what to ask next all live in `src/core/` — and progress now persists, with
-backup to a JSON file and back (`src/storage/`). The deployed page is the profile picker that proves
-it. Neither game is built yet, and there is no content.
+**Status: the multiplication game is playable.** Pick a child, practise times tables, and the spaced
+repetition, the ability estimate and the attempt history all update behind it. Progress is saved in
+the browser and can be exported to a JSON file and restored. Spelling is not built — it needs word
+lists and audio first — and there is no progress chart for either subject yet.
 
 Live at <https://captainchocolatedessert.github.io/flash-cards/>
 

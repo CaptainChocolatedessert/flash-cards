@@ -24,18 +24,22 @@ const SELECTED_KEY = "flash-cards:selected-profile";
 export interface ProfileScreenOptions {
   readonly store: ProgressStore;
   readonly root: HTMLElement;
+  /** Start a game for this child. The app shell decides what that means. */
+  readonly onPlay: (profileId: string) => void;
 }
 
 export class ProfileScreen {
   readonly #store: ProgressStore;
   readonly #root: HTMLElement;
+  readonly #onPlay: (profileId: string) => void;
   #profiles: ProfileSummary[] = [];
   #records = new Map<string, ProgressRecord>();
   #selected: string | null = null;
 
-  constructor({ store, root }: ProfileScreenOptions) {
+  constructor({ store, root, onPlay }: ProfileScreenOptions) {
     this.#store = store;
     this.#root = root;
+    this.#onPlay = onPlay;
     this.#selected = localStorage.getItem(SELECTED_KEY);
   }
 
@@ -84,11 +88,13 @@ export class ProfileScreen {
     const heading = el("h1", "Flash Cards");
     const lede = el(
       "p",
-      "Spelling and multiplication practice. No games are built yet — this screen exists to prove that progress is saved and comes back.",
+      "Times tables are ready to play. Spelling is not built yet. Progress is saved on this computer — use Export now and then, so it is not the only copy.",
     );
     lede.className = "lede";
 
-    this.#root.append(heading, lede, this.#profileSection(), this.#backupSection());
+    this.#root.append(heading, lede, this.#profileSection());
+    if (this.#selected !== null) this.#root.append(this.#playSection(this.#selected));
+    this.#root.append(this.#backupSection());
 
     const message = document.createElement("p");
     message.className = "message";
@@ -194,6 +200,51 @@ export class ProfileScreen {
       void this.#createProfile(name);
     });
     return form;
+  }
+
+  /**
+   * The subject picker. Two games behind it eventually; spelling is listed and
+   * disabled rather than hidden, so what is coming is visible from the start.
+   */
+  #playSection(profileId: string): HTMLElement {
+    const section = document.createElement("section");
+    section.append(el("h2", "Play"));
+
+    const row = document.createElement("div");
+    row.className = "row";
+
+    const times = button("Times tables", () => this.#onPlay(profileId));
+    times.className = "play";
+
+    const spelling = button("Spelling", () => undefined);
+    spelling.disabled = true;
+    // aria-label rather than title: a title on a disabled button replaces the
+    // visible label in the accessibility tree, so the button stops announcing
+    // what it is.
+    spelling.setAttribute("aria-label", "Spelling — not built yet");
+
+    row.append(times, spelling);
+    section.append(row);
+
+    const record = this.#records.get(profileId);
+    if (record !== undefined) {
+      const note = el("p", this.#dueLine(record));
+      note.className = "note";
+      section.append(note);
+    }
+    return section;
+  }
+
+  /** What is waiting, so starting a session is not a blind click. */
+  #dueLine(record: ProgressRecord): string {
+    const now = Date.now();
+    const items = Object.values(record.subjects.multiplication.items);
+    if (items.length === 0) return "Nothing met yet — the first session starts from scratch.";
+    const due = items.filter((s) => s.dueAt !== null && s.dueAt <= now).length;
+    const met = items.length;
+    return due === 0
+      ? `${met} facts met, none due for review right now — a session will bring in new ones.`
+      : `${due} fact${due === 1 ? "" : "s"} due for review, out of ${met} met.`;
   }
 
   #backupSection(): HTMLElement {

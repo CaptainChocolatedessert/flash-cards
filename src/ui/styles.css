@@ -138,3 +138,99 @@ button:hover {
   color: var(--muted);
   font-style: italic;
 }
+
+button.play {
+  font-size: 1.05rem;
+  padding: 0.55rem 1.4rem;
+}
+
+/* --- the game ----------------------------------------------------------- */
+
+.game-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--edge);
+}
+
+.game-who {
+  font-weight: 600;
+}
+
+.game-score {
+  margin-left: auto;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.card {
+  margin-top: 3rem;
+  text-align: center;
+}
+
+/* Big, because the fact is the whole screen. Tabular figures so the digits do
+   not shuffle sideways as questions change. */
+.prompt {
+  font-size: clamp(2.5rem, 12vw, 4.5rem);
+  font-variant-numeric: tabular-nums;
+  margin: 0 0 1.5rem;
+  letter-spacing: 0.02em;
+}
+
+.card form {
+  justify-content: center;
+}
+
+input.answer {
+  font-size: 2.5rem;
+  width: 5em;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  padding: 0.25rem 0.5rem;
+}
+
+.clock {
+  margin: 1.25rem 0 0;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.feedback {
+  font-size: 2rem;
+  display: grid;
+  gap: 0.5rem;
+  justify-items: center;
+}
+
+.feedback p {
+  margin: 0;
+}
+
+.feedback p + p {
+  font-size: 1rem;
+  color: var(--muted);
+}
+
+.feedback[data-tone="right"] {
+  color: color-mix(in srgb, green 55%, currentColor);
+}
+
+.feedback[data-tone="wrong"] {
+  color: color-mix(in srgb, crimson 55%, currentColor);
+}
+
+.feedback button {
+  font-size: 1rem;
+  margin-top: 0.75rem;
+}
+
+.boxes {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.25rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}

@@ -4,12 +4,12 @@ A question-and-answer study game for two kids: **spelling** (spoken word, typed 
 **multiplication facts**. Spaced repetition underneath both, per-child progress, runs in a browser
 with no backend.
 
-Status: **the headless core and the storage layer are built and tested** (`src/core/`,
-`src/storage/`, 97 tests). Everything that decides what to ask next and what a result means exists
-and is exercised, including against simulated children; progress persists across a browser restart,
-and can be exported to a file and restored from it — both checked by hand, not just in tests. The
-only screen is the profile picker that proves it. There is no game and no content yet. Build order
-step 2 of 9 done; step 3 is the multiplication game end to end.
+Status: **the multiplication game is playable end to end** (`src/core/`, `src/storage/`, `src/game/`,
+`src/ui/`, 123 tests). Pick a child, play times tables, and the boxes, the estimator and the archive
+all move; progress persists across a browser restart and can be exported to a file and restored from
+it. Spelling has no content and no game yet, and no progress chart is drawn for either subject.
+Build order step 3 of 9 done; step 4 is acquiring the word lists, which is blocked on the licensing
+question.
 
 This file is the design record and the thing that carries context between sessions. Keep it current
 as work lands. When a decision is superseded, **replace it and say it was replaced** — do not stack
@@ -331,6 +331,32 @@ buries them.
 itself wrong in an obvious direction: too low and sessions run out of new material and turn into pure
 drill; too high and the kid is drowning in half-learned words.
 
+#### A second gate, found by building it — 2026-08-08
+
+The ceiling turned out not to be enough on its own, and the reason is worth recording because it is
+invisible on paper.
+
+A missed item goes back into the running session *about five questions later*. With introductions
+gated only on the ceiling, a session that starts from nothing introduces one item, the child misses
+it, and "five questions later" in a queue holding nothing means **immediately** — the same fact,
+straight back, which is echo rather than recall and is precisely what box 1 is defined to avoid.
+
+So the session keeps a small buffer of upcoming questions topped up — one more than the reinsert gap
+— and introduces to fill it. That guarantees there is always something to put between an item and
+its repeat.
+
+It is a *tighter* gate than the ceiling, and it binds in the case that matters: a child getting
+everything wrong ends up cycling around six unknowns instead of being handed fifteen. The ceiling
+still binds when reviews are plentiful. Both are wanted; neither replaces the other.
+
+**Consequence, also found by building it: introductions run ahead of the child, so a session that
+ends mid-queue leaves items that were introduced and never actually asked.** Left in the record they
+are phantoms — they count as met, they show in the readout as "just learning", and they count toward
+the low-box total, so the governor throttles introductions because of material the child has never
+seen. They are therefore **dropped when the session closes**, restoring the invariant the rest of
+the system assumes: an item in the record is one the child has actually met. Nothing is lost — they
+go back to being unseen and can come round again next time.
+
 ### The kid's difficulty control
 
 The user asked for a way for the kids to say they want harder or easier words. **This maps to exactly
@@ -373,12 +399,23 @@ estimate and nothing else. A later refinement, if the data ever justifies it, is
 learn per-word difficulty and correct the published labels — plausible over a year with two kids,
 not a plan.
 
-### Multiplication is exempt from all of this
+### Multiplication is exempt from the *ladder*, not from the weighting
 
-**Load the whole table to 12 at once and let Leitner handle it.** 78 distinct facts is not enough
-material to need an introduction policy, and building one would be machinery in search of a problem.
-The volume governor above still applies — make all 78 *eligible*, but don't dump them all into box 1
-in one session.
+**Load the whole table to 12 at once and let Leitner handle it.** There are no bands to climb and
+nothing to unlock: all 78 facts are eligible from the first session, and the volume governor is what
+stops them all landing in box 1 at once.
+
+**Amended 2026-08-08, when the game was built.** The original wording said multiplication needed no
+introduction policy at all, on the grounds that building one for 78 facts would be machinery in
+search of a problem. That was about *building* it. The weighting already exists and is generic over
+bands, so the real choice at build time was between using it and inventing a second, worse ordering
+for picking which unseen fact comes next. It is used. Two reasons: a fixed order would have to be
+either arbitrary (12×12 before 2×3 for a struggling child) or a hand-made easy-to-hard sequence,
+which is a ladder by another name; and the harder/easier control is defined as a shift in the target
+success rate, so without the weighting that control would do nothing at all in this game.
+
+Same reasoning as the estimator being shared between the two subjects: writing it twice would have
+been duplication, not separation.
 
 **`a×b` and `b×a` are the same fact for scheduling**, presented in both orders. 1-12 is 144 ordered
 pairs but only 78 distinct facts, and treating them separately doubles the deck for no learning gain.
@@ -724,6 +761,50 @@ was, on 2026-08-08, along with an export and a restore from the resulting file.
 
 ---
 
+## The multiplication game, as built
+
+The session engine lives in `src/game/` and is pure — no DOM, no storage — for the same reason the
+core is. **It is deliberately subject-agnostic:** a subject hands it a *deck* (a set of item ids and
+which band each belongs to) and nothing else, so spelling will run on the same engine with a
+different deck. Everything multiplication-specific — the 78 facts, how one is shown, what counts as
+a right answer — is one small file beside it.
+
+The engine's shape: start a session from what is due, hand out one question at a time, take a result
+back, and close with a summary. The three things a result touches are driven off different inputs
+on purpose — the box moves on correctness alone and never on time, the estimator reads *only* first
+exposures, and the archive takes everything including the keystroke timeline.
+
+**The screen writes after every answer**, not at the end. Children close tabs; the record is a few
+kilobytes and the write is off the critical path, so the cost is invisible and the alternative is
+losing a whole session to a stray click.
+
+**Both ways out of a session are the same event** — the Stop button and running out of material both
+close the session and write its summary. An earlier version only wrote a summary when the child
+pressed Stop, which would have silently lost every session that simply ran to the end.
+
+**Enter is handled explicitly rather than through the form's implicit submission**, and likewise for
+carrying on from a wrong answer, which accepts Enter from anywhere on the page rather than only from
+the focused button. Enter is how this game is played — a number and a return, hundreds of times a
+session — and it is not worth leaving to a browser default that quietly does not fire in some
+contexts. It also means the rhythm never depends on where focus happens to be.
+
+**A wrong answer waits for the child; a right one moves on by itself** after about half a second.
+The correct product stays on screen with the fact still above it, so the answer has something to
+attach to.
+
+**The speed round is not built.** DESIGN.md lists it as a mode the child can choose, and it is
+deliberately left out for now because of an interaction that needs thinking about first: a timed miss
+does not demote, so a child who plays every session as a speed round can never be demoted at all.
+The clock following the box needs no such decision and covers the fluency case already.
+
+### What is not in this game yet
+
+The proficiency chart, the harder/easier control, and the box-count readout beyond the end-of-session
+summary are all build order step 9. The estimator is being fed and the difficulty setting is being
+stored; nothing shows either yet.
+
+---
+
 ## Open questions
 
 1. **Word list licensing.** Dolch and Fry are safe. **Scripps "Words of the Champions" is free to
@@ -794,9 +875,17 @@ was, on 2026-08-08, along with an export and a restore from the resulting file.
    by-hand check that neither a fake nor a page reload can stand in for: **verified 2026-08-08 that
    profiles survive quitting and reopening the browser, and that an exported file restores.** That
    was the precondition for building anything on top of the store, and it is met.
-3. **Multiplication game end to end.** Chosen before spelling deliberately: it needs no audio, no
-   corpus and no licensing research, so it exercises the scheduler, the store, the session shell and
-   the readout against the simplest possible content. Everything it proves, spelling reuses.
+3. **Multiplication game end to end.** Done. `src/game/` — a subject-agnostic session engine over a
+   deck, plus the facts themselves — and a game screen that asks, times where the box says to, keeps
+   the keystroke timeline, saves after every answer and closes with a summary. 26 engine tests,
+   including a simulated child who knows the small tables and not the large ones, checked for whether
+   the system ends up drilling the right material. Played end to end in a browser.
+
+   Chosen before spelling deliberately: it needs no audio, no corpus and no licensing research, so it
+   exercises the scheduler, the store, the session shell and the readout against the simplest
+   possible content. That paid off — three real defects surfaced only by playing it, all recorded
+   above: the missed-item echo, sessions that ended without writing a summary, and phantom items left
+   by introductions that ran ahead of the child.
 4. **Word lists.** Acquire, verify licensing, attach grade labels, commit. Blocking on open
    question 1.
 5. **Audio pipeline.** Build-time fetch, transcode, attribution generation. Speech-synthesis

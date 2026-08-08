@@ -8,14 +8,14 @@
 
 import "./ui/styles.css";
 import { IndexedDbProgressStore } from "./storage/index.js";
-import { ProfileScreen } from "./ui/profiles.js";
+import { App } from "./ui/app.js";
 
 const root = document.querySelector<HTMLElement>("#app");
 if (root === null) throw new Error("Missing #app");
 
-const screen = new ProfileScreen({ store: new IndexedDbProgressStore(), root });
+const app = new App(new IndexedDbProgressStore(), root);
 
-screen.start().catch((error: unknown) => {
+app.start().catch((error: unknown) => {
   // Almost always one thing: a browser with IndexedDB blocked, which private
   // windows and some privacy settings do. Say so rather than showing a page
   // that silently does nothing.
