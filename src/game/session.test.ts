@@ -11,7 +11,7 @@ import {
 } from "../core/index.js";
 import { newRecord } from "../storage/index.js";
 import type { SubjectProgress } from "../storage/index.js";
-import { advance, endSession, startSession, submit } from "./session.js";
+import { advance, endSession, startSession, submit, typingSpeed } from "./session.js";
 import type { Response, Session, SessionConfig } from "./session.js";
 import { correctAnswer, isCorrect, multiplicationDeck } from "./multiplication.js";
 
@@ -353,12 +353,47 @@ describe("finishing", () => {
     expect(outcome.introduced).toBe(0);
   });
 
-  it("records no typing speed — that is the spelling game's number", () => {
+  it("records no typing speed for multiplication — a two-digit product says nothing about typing", () => {
     const cfg = config();
     const session = play(startSession(emptyProgress(), T0), cfg, () => true, 5);
     const summary = endSession(session, T0 + 60_000).progress.sessions.at(-1);
     expect(summary?.correctChars).toBe(0);
     expect(summary?.typingMs).toBe(0);
+  });
+
+  it("counts typing when the subject tracks it, and only for correct answers", () => {
+    const cfg = { ...config(), tracksTyping: true };
+    let session = advance(startSession(emptyProgress(), T0), cfg, T0);
+
+    // Correct: 5 characters over 2 seconds.
+    session = submit(
+      session,
+      cfg,
+      { correct: true, answer: "rhythm", elapsedMs: 2000, keystrokes: [] },
+      T0 + 2000,
+    );
+    session = advance(session, cfg, T0 + 2000);
+    // Wrong: must not count, however much was typed.
+    session = submit(
+      session,
+      cfg,
+      { correct: false, answer: "wrongwrongwrong", elapsedMs: 9000, keystrokes: [] },
+      T0 + 11_000,
+    );
+
+    expect(session.correctChars).toBe(6);
+    expect(session.typingMs).toBe(2000);
+
+    const summary = endSession(session, T0 + 20_000).progress.sessions.at(-1);
+    expect(summary?.correctChars).toBe(6);
+    expect(summary?.typingMs).toBe(2000);
+  });
+
+  it("turns characters and time into a rate a child can watch go up", () => {
+    // 180 correct characters in 60 seconds is 180 a minute.
+    expect(typingSpeed(180, 60_000)).toBeCloseTo(180);
+    expect(typingSpeed(0, 60_000)).toBeNull();
+    expect(typingSpeed(50, 0)).toBeNull();
   });
 });
 

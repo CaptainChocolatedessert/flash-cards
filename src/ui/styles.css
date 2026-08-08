@@ -225,6 +225,27 @@ input.answer {
   margin-top: 0.75rem;
 }
 
+/* Wider than the multiplication box and left-aligned: words are long and read
+   left to right, where a centred product does not. */
+input.answer-word {
+  width: 12em;
+  text-align: left;
+  font-size: 2rem;
+  letter-spacing: 0.04em;
+}
+
+.say-row {
+  margin: 0 0 2rem;
+}
+
+/* Big, because it is the only way to hear the question again and a child who
+   cannot find it is stuck. */
+.say-again {
+  font-size: 1.25rem;
+  padding: 0.8rem 1.6rem;
+  border-radius: 0.5rem;
+}
+
 .boxes {
   list-style: none;
   padding: 0;

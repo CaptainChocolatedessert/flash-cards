@@ -5,6 +5,7 @@ import { newRecord } from "../storage/index.js";
 import {
   KINDERGARTEN_BAND,
   MAX_GRADE,
+  askableWords,
   bandLabel,
   spellingDeck,
   spellingProficiencyModel,
@@ -65,11 +66,27 @@ describe("the word list", () => {
 });
 
 describe("the deck", () => {
-  it("offers every word and knows each one's band", () => {
+  it("offers every askable word and knows each one's band", () => {
     const deck = spellingDeck();
-    const words = spellingWords();
+    const words = askableWords();
     expect(deck.itemIds).toHaveLength(words.length);
     for (const w of words.slice(0, 50)) expect(deck.bandOf(w.word)).toBe(w.band);
+  });
+
+  it("holds back words a spoken prompt cannot distinguish", () => {
+    // Asking "their" with no sentence marks a child wrong for spelling "there"
+    // perfectly. Held until cloze sentences exist — build order step 7.
+    const askable = new Set(spellingDeck().itemIds);
+    for (const w of ["their", "there", "principal", "principle", "to", "too", "two"]) {
+      expect(askable.has(w)).toBe(false);
+    }
+    expect(askable.has("accommodate")).toBe(true);
+    // They stay in the list — they are only withheld from being asked.
+    expect(spellingWords().some((w) => w.word === "their")).toBe(true);
+  });
+
+  it("still has plenty to ask without them", () => {
+    expect(spellingDeck().itemIds.length).toBeGreaterThan(950);
   });
 
   it("refuses an item it does not have, rather than guessing a band", () => {

@@ -150,8 +150,26 @@ export function wordsNeedingContext(): SpellingWord[] {
   return spellingWords().filter((w) => w.sets.some((s) => CONTEXT_REQUIRED_SETS.includes(s)));
 }
 
+/**
+ * The words the game may currently ask.
+ *
+ * Homophones and commonly-confused words are **held back until cloze sentences
+ * exist** (build order step 7). A spoken `their` is also a spoken `there`, so
+ * asking one without a sentence to disambiguate it marks a child wrong for
+ * spelling a different word perfectly — which teaches nothing, and which they
+ * would be right to resent. Better to ask fewer words than to ask unanswerable
+ * ones.
+ *
+ * They stay in the list rather than being deleted: they are the most valuable
+ * spelling practice in the whole corpus, and step 7 is what unlocks them.
+ */
+export function askableWords(): SpellingWord[] {
+  const held = new Set(wordsNeedingContext().map((w) => w.word));
+  return spellingWords().filter((w) => !held.has(w.word));
+}
+
 export function spellingDeck(): Deck {
-  const words = spellingWords();
+  const words = askableWords();
   const bands = new Map(words.map((w) => [w.word, w.band]));
   return {
     itemIds: words.map((w) => w.word),

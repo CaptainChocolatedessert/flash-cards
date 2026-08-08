@@ -7,13 +7,22 @@
  * ever grows a third screen worth linking to, this is where that decision goes.
  */
 
-import type { ProgressStore } from "../storage/index.js";
+import type { ProgressStore, SubjectId } from "../storage/index.js";
+import { BrowserSpeaker } from "../audio/speech.js";
+import type { Speaker } from "../audio/speech.js";
 import { MultiplicationScreen } from "./multiplication.js";
 import { ProfileScreen } from "./profiles.js";
+import { SpellingScreen } from "./spelling.js";
 
 export class App {
   readonly #store: ProgressStore;
   readonly #root: HTMLElement;
+  /**
+   * One speaker for the whole app, built once. Voices load asynchronously, so a
+   * speaker created fresh at the start of each session would spend the first
+   * word or two without a chosen voice.
+   */
+  readonly #speaker: Speaker = new BrowserSpeaker();
 
   constructor(store: ProgressStore, root: HTMLElement) {
     this.#store = store;
@@ -28,12 +37,12 @@ export class App {
     const screen = new ProfileScreen({
       store: this.#store,
       root: this.#root,
-      onPlay: (profileId) => void this.#play(profileId),
+      onPlay: (profileId, subject) => void this.#play(profileId, subject),
     });
     await screen.start();
   }
 
-  async #play(profileId: string): Promise<void> {
+  async #play(profileId: string, subject: SubjectId): Promise<void> {
     const record = await this.#store.load(profileId);
     if (record === null) {
       // The profile went away between the click and the load — deleted in
@@ -42,11 +51,18 @@ export class App {
       return;
     }
 
-    new MultiplicationScreen({
-      store: this.#store,
-      root: this.#root,
-      record,
-      onExit: () => void this.#showProfiles(),
-    }).start();
+    const onExit = (): void => void this.#showProfiles();
+    if (subject === "spelling") {
+      new SpellingScreen({
+        store: this.#store,
+        root: this.#root,
+        record,
+        speaker: this.#speaker,
+        onExit,
+      }).start();
+      return;
+    }
+
+    new MultiplicationScreen({ store: this.#store, root: this.#root, record, onExit }).start();
   }
 }

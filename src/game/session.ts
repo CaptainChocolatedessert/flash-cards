@@ -54,6 +54,15 @@ export interface SessionConfig {
   readonly deck: Deck;
   readonly model: ProficiencyModel;
   readonly rng: Rng;
+  /**
+   * Whether answers to this subject are typing worth measuring.
+   *
+   * True for spelling, where building typing speed is a wanted outcome and needs
+   * a number the child can watch go up. False for multiplication: a two-digit
+   * product says nothing about typing, and pooling it in would drag the rate
+   * toward meaninglessness. See DESIGN.md, "Typing speed as a goal".
+   */
+  readonly tracksTyping?: boolean;
 }
 
 export interface Question {
@@ -99,6 +108,17 @@ export interface Session {
    */
   readonly introducedIds: readonly string[];
   readonly startedAt: number;
+  /**
+   * Correct characters typed, and the time they took.
+   *
+   * Only correct answers count, and they are kept as two raw numbers rather than
+   * a rate so sessions can be pooled without averaging averages. Correct
+   * characters per minute across a whole session is the typing-tutor measure:
+   * robust to one slow word, and needing no separation of retrieval from typing
+   * — which DESIGN.md establishes cannot be done for spelling anyway.
+   */
+  readonly correctChars: number;
+  readonly typingMs: number;
 }
 
 /** Everything the readout at the end of a session shows. */
@@ -132,6 +152,8 @@ export function startSession(progress: SubjectProgress, now: number): Session {
     correct: 0,
     introducedIds: [],
     startedAt: now,
+    correctChars: 0,
+    typingMs: 0,
   };
 }
 
@@ -325,6 +347,11 @@ export function submit(
   // unfinished business and is left on its existing interval.
   const requeue = !response.correct && question.mode === "untimed";
 
+  // Only correct answers count toward typing speed. A misspelling has a length
+  // that says nothing about how fast the child types, and counting attempts
+  // would reward typing gibberish quickly.
+  const counted = config.tracksTyping === true && response.correct;
+
   return {
     ...session,
     progress,
@@ -332,6 +359,8 @@ export function submit(
     current: null,
     asked: session.asked + 1,
     correct: session.correct + (response.correct ? 1 : 0),
+    correctChars: session.correctChars + (counted ? response.answer.trim().length : 0),
+    typingMs: session.typingMs + (counted ? response.elapsedMs : 0),
   };
 }
 
@@ -366,9 +395,8 @@ function forgetUnasked(progress: SubjectProgress): SubjectProgress {
  * A session where nothing was asked leaves no summary — an empty row would
  * otherwise show up in the trend lines as a session with no accuracy at all.
  *
- * `correctChars` and `typingMs` stay zero here. They are the typing-speed
- * number, and typing speed is a wanted outcome of the *spelling* game; a
- * two-digit product says nothing about it. Spelling fills them in.
+ * `correctChars` and `typingMs` carry through from the session, and stay zero
+ * unless the subject tracks typing — see `SessionConfig.tracksTyping`.
  */
 export function endSession(session: Session, now: number): SessionOutcome {
   const progress = forgetUnasked(session.progress);
@@ -393,8 +421,14 @@ export function endSession(session: Session, now: number): SessionOutcome {
       asked: session.asked,
       correct: session.correct,
       introduced,
-      correctChars: 0,
-      typingMs: 0,
+      correctChars: session.correctChars,
+      typingMs: session.typingMs,
     }),
   };
+}
+
+/** Correct characters per minute across a session. Null when nothing countable was typed. */
+export function typingSpeed(correctChars: number, typingMs: number): number | null {
+  if (typingMs <= 0 || correctChars <= 0) return null;
+  return (correctChars / typingMs) * 60_000;
 }

@@ -4,14 +4,19 @@ A question-and-answer study game for two kids: **spelling** (spoken word, typed 
 **multiplication facts**. Spaced repetition underneath both, per-child progress, runs in a browser
 with no backend.
 
-Status: **the multiplication game is playable end to end, and the spelling words are in** (139 tests).
-Pick a child, play times tables, and the boxes, the estimator and the archive all move; progress
-persists across a browser restart and can be exported to a file and restored from it. The spelling
-word list is imported and drives the session engine in tests, but there is **no spelling game yet**:
-it needs a way to say the word aloud. No progress chart is drawn for either subject.
+Status: **both games are playable end to end** (148 tests). Pick a child, play times tables or
+spelling; the words are spoken by the browser's own synthesiser, and the boxes, the estimator, the
+typing-speed measure and the attempt archive all move. Progress persists across a browser restart and
+can be exported to a file and restored from it.
 
-Build order steps 0-4 of 9 done. Next is step 5, the audio pipeline — and per that step, **speech
-synthesis first**, so the spelling game works before any recordings exist.
+Still missing: **human recordings** (synthesis is the only voice, which is the fallback doing all the
+work), **cloze sentences** — and until they exist the ~98 homophones and commonly-confused words are
+withheld from being asked, since a spoken `their` is also a spoken `there` — the **PWA**, and the
+**progress chart**, which is the one remaining thing that would answer "is she behind?".
+
+Build order steps 0-4 done, step 5 half done (synthesis yes, recordings no), step 6 done bar the
+blacklist button. Next is step 9, the progress readout, or step 7's cloze sentences to unlock the
+homophones.
 
 This file is the design record and the thing that carries context between sessions. Keep it current
 as work lands. When a decision is superseded, **replace it and say it was replaced** — do not stack
@@ -644,6 +649,15 @@ Typing practice is a wanted outcome, so it needs a number the kid can watch go u
 characters per minute across a whole session**, not anything per-word — it is what typing tutors
 use, it is robust to one slow word, and it requires no separation of retrieval from typing.
 
+**Built, and only for spelling.** The session engine takes it as a per-subject switch: a two-digit
+product says nothing about typing, and pooling multiplication in would drag the rate toward
+meaninglessness. Only *correct* answers count, since a misspelling's length says nothing about typing
+speed and counting attempts would reward typing gibberish quickly.
+
+**The clock starts when the word has finished being spoken**, not when it starts. Timing from the
+start would fold the synthesiser's speaking rate into the child's typing speed, and a slower voice
+would read as a slower typist.
+
 ### Which mode when
 
 **The timing mode follows the box.** Low-box words (still being learned) are asked untimed; box 4+
@@ -724,6 +738,16 @@ this ships to children. Treat an unfiltered corpus reaching the kids as a defect
 If Tatoeba proves unworkable, hand-writing sentences for just the homophone set is a manageable
 fallback — that list is short, and homophones are the only case where the sentence is strictly
 necessary rather than merely helpful.
+
+**As built, those words are simply not asked.** A spoken `their` is also a spoken `there`, so asking
+one without a sentence marks a child wrong for spelling a different word perfectly — which teaches
+nothing and which they would be right to resent. The ~98 affected words stay in the list and are
+withheld from the deck until the sentences exist. Note it is **two** sets, not one: `their`/`there`
+sit in "Homophones" at grade 4, while `principal`/`principle` and `stationary`/`stationery` sit in
+"Commonly confused" at grade 7. Both are the same problem.
+
+That makes the cloze work worth more than its position in the build order suggests: it is not a
+refinement, it is what unlocks the most valuable spelling practice in the corpus.
 
 ### Attribution
 
@@ -1071,9 +1095,19 @@ stored; nothing shows either yet.
    **Deliberately not done** (user's call — tune later, get the game working first): the Dolch recall
    errors are uncorrected and the grade-4-8 placements are unchecked. Both are recorded in
    `NOTICES.md`. Growing the corpus is open question 11.
-5. **Audio pipeline.** Build-time fetch, transcode, attribution generation. Speech-synthesis
-   fallback first so the game works before the corpus exists.
-6. **Spelling game**, including the blacklist button.
+5. **Audio pipeline.** Half done. **Speech synthesis is built** (`src/audio/speech.ts`) behind a
+   one-method interface, so the game works with no corpus at all and recordings become an upgrade
+   rather than a prerequisite — which is exactly why this half was ordered first. It picks an English
+   voice, preferring one that lives on the device so the spelling game is not the one part of an
+   offline app that stops working without a network, and it never blocks the game: a synthesiser that
+   fails to report finishing is released after a few seconds rather than hanging the question.
+   **Still to do:** the build-time fetch of human recordings, transcode to MP3, and generated
+   attribution.
+6. **Spelling game.** Done (`src/ui/spelling.ts`) — the same session engine as multiplication with a
+   different deck, the word spoken rather than shown, a large "say it again" button, and correct
+   characters per minute reported at the end of a session. **Not done: the blacklist button**, which
+   has nothing to do yet: it exists to fall through to the *next* recording, and with synthesis as
+   the only voice there is nothing to fall through to. It arrives with the recordings.
 7. **Cloze sentences.** Last because it is the only part gated on a content-filtering problem, and
    the game is fully playable without it for every non-homophone word.
 8. **PWA** — manifest, service worker, `navigator.storage.persist()`, install prompt.
