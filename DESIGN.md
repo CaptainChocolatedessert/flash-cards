@@ -445,19 +445,82 @@ For the 8th grader this is likely all fluent already, so the fast-track will cle
 real value is the **timed fluency** mode rather than learning. If the subject is exhausted, the
 natural extensions are squares past 12, or division facts as the inverse.
 
-### Spelling word lists
+### Spelling word lists — resolved 2026-08-08
 
-Grade-labelled, as large as can be sourced. Candidates, all freely available:
+**The finding that decides everything: no grade-labelled spelling list can be licensed, because the
+grade labelling is exactly what publishers sell.** New Jersey publishes no statewide word list; the
+NJSLS-ELA define *skills* per grade ("recognize and read grade-appropriate irregularly spelled
+words", "spell grade-appropriate words correctly") and leave the words to districts. Common Core
+does the same by design. The only words the standards enumerate are ten kindergarten examples. So
+districts adopt a commercial program — in New Jersey overwhelmingly Wilson Fundations, copyrighted —
+and every graded list that exists is somebody's product.
 
-- **Dolch sight words** (1936, public domain) — 220 service words + 95 nouns, pre-K to grade 3.
-- **Fry's 1000 Instant Words** — banded in hundreds, roughly grades 1-9. Widely reproduced.
-- **Scripps "Words of the Champions"** — 4,000 words released free as a PDF, tiered One/Two/Three
-  Bee (roughly grades 1-3, 4-5, 6-8). Carries the upper end where Dolch and Fry run out.
-- **SCOWL** (Spell Checker Oriented Word Lists) — public domain, bucketed by frequency. Useful both
-  as a difficulty proxy where grade labels are missing and to extend past grade 8.
+#### What was checked, and what it said
 
-**Licensing is an open question, not a settled one** — see below. Verify before committing any list
-to a public repo.
+- **Scripps "Words of the Champions"** — **cannot use.** No permission grant in the PDF's front
+  matter or on the study-list page, which carries only "© The E.W. Scripps Company. All rights
+  reserved." It is not even freely downloadable: teachers at enrolled schools log in, everyone else
+  buys the book. Under *Feist* (1991) the individual words are unprotectable facts, but the
+  **selection** of 4,000 words out of Merriam-Webster Unabridged and their sorting into three tiers
+  is the original selection-and-arrangement that carries a thin compilation copyright — and copying
+  the list whole is the central case that thin right covers.
+- **Fry's 1000 Instant Words** — **cannot use.** A modern published work, most cited from Fry's 1996
+  book, with no permissive terms. Ubiquitous photocopying in schools is tolerance, not a licence,
+  and a PDF hosted by a school district licenses nothing. If high-frequency words are wanted, derive
+  a ranking from a licensed frequency source instead of copying Fry's.
+- **Dolch (1936)** — **low risk, but not verified.** Universally treated as public domain; no
+  renewal record found either way, and a renewed 1936 work runs to 2031. 220 words chosen by raw
+  frequency is about as thin as a compilation claim gets, so the practical risk is small. Recorded
+  as low-risk-unverified rather than public domain, because those are not the same claim.
+- **SCOWL / English Speller Database** — **usable.** MIT-like: "Permission to use, copy, modify,
+  distribute and sell these word lists... for any purpose is hereby granted without fee", conditional
+  on preserving copyright notices. Some bundled components add conditions (the UK Advanced Cryptics
+  Dictionary requires its notice verbatim; WordNet requires its notices kept), so it needs a bundled
+  notices file — which the audio pipeline was already going to generate.
+- **SUBTLEX-US** word frequencies — **usable**, CC-BY-SA.
+- **Kuperman et al. age-of-acquisition norms** — usable (CC-BY-4.0 via NoRaRe) but **rejected as the
+  difficulty signal.** Raters were asked for the age they would have *understood* a word "if somebody
+  had used it in front of you, EVEN IF YOU DID NOT use, read or write it at the time." That is
+  receptive spoken vocabulary, which is close to the worst-matched signal available for a game about
+  typing words correctly. The user caught this; it is recorded because it is an easy mistake to make
+  twice.
+
+#### The decision
+
+**Use a written list rather than a copied one, and grow it.** The seed is a K-8 bank of ~1,145 words
+built in an earlier session against the NJSLS skill progression: Dolch for K-3, and for grades 4-8
+sets written around what the standards actually name at each grade — homophones, `-tion`/`-sion`,
+irregular plurals, prefixes and suffixes, Greek and Latin roots, academic vocabulary, and
+frequently-misspelled words. Nothing in grades 4-8 is transcribed from any published program, which
+is what makes it usable at all.
+
+It is not sufficient as it stands, and the gaps are the build work:
+
+- **Only ~830 words sit in grades 4-8**, which is the range that matters for a 6th and 8th grader.
+  The K-3 portion is Dolch *reading* sight words (`the`, `said`, `look`) — the fast-track will clear
+  those in a session or two, which is correct behaviour but leaves the effective corpus small against
+  a design that dropped a word cap specifically to get thousands.
+- **It stops at grade 8**, so the older child has no headroom. The design calls for reach into early
+  high school.
+- **The grade assignments are one model's judgement and are unvalidated.** This matters far less than
+  it would have under the old ladder: a mislabelled word now perturbs one estimate slightly, and the
+  per-band residuals exist to correct a systematically wrong prior.
+
+**How to grow it: use the written list as calibration anchors for a computed difficulty model.** The
+curated words give grade-anchored points; frequency (SCOWL, or SUBTLEX if share-alike is acceptable)
+plus computed orthographic irregularity — how unpredictable a word's spelling is from its sound, from
+a pronunciation dictionary — can then place thousands more words on the same scale, and extend it
+past grade 8. That marries the two halves honestly: the anchor comes from human judgement about
+grades, the reach comes from computation, and neither copies anyone's list.
+
+**What the chart may honestly claim.** The grade labels mean "organised around the skills New Jersey
+names at that grade", not "New Jersey expects a sixth-grader to spell this" — nobody publishes the
+latter in usable form. The distinction belongs somewhere in the app, because the chart is what gets
+read to answer "is she behind?", and a bar labelled *Grade 6* that corresponds to no real grade-6
+expectation is the same class of error as a diagnostic that cannot distinguish its outcomes.
+
+**Note the split that remains:** the code's licence is not the data's licence. MIT code, CC-BY-SA
+audio, and a word list that is ours except for the Dolch portion — each labelled.
 
 ---
 
@@ -821,12 +884,14 @@ stored; nothing shows either yet.
 
 ## Open questions
 
-1. **Word list licensing.** Dolch and Fry are safe. **Scripps "Words of the Champions" is free to
-   download but that is not the same as free to redistribute** — read the terms before committing
-   it to a public repo. If it is not redistributable, the fallback is a frequency-derived ladder
-   from SCOWL, which is public domain but a cruder proxy for grade level.
+1. ~~**Word list licensing.**~~ **Closed 2026-08-08** — see "Spelling word lists" above. Scripps and
+   Fry are both out; Dolch is low-risk but unverified; SCOWL and SUBTLEX are usable. The resolution
+   is to use a written list rather than a copied one, because grade labelling is the very thing
+   publishers sell and so the very thing no free source provides.
 2. **Sentence corpus filtering.** How aggressively, and verified how. Blocking condition for the
-   cloze feature.
+   cloze feature. Partly eased: the seed word list already carries explicit *homophones* and
+   *commonly confused* sets, and those are the only words where a sentence is strictly necessary
+   rather than merely helpful — so the hand-written fallback now has a ready-made scope.
 3. **Blacklist scope** — per-child or shared. Shared is the default; unresolved. Built that way: it
    sits outside any profile and an import unions the two sides rather than picking one. Moving it
    per-child later means moving it into each child's record and dropping that union rule.
@@ -900,8 +965,10 @@ stored; nothing shows either yet.
    possible content. That paid off — three real defects surfaced only by playing it, all recorded
    above: the missed-item echo, sessions that ended without writing a summary, and phantom items left
    by introductions that ran ahead of the child.
-4. **Word lists.** Acquire, verify licensing, attach grade labels, commit. Blocking on open
-   question 1.
+4. **Word lists.** Licensing resolved — no longer blocked. Remaining work: import the written K-8
+   bank, extend it upward past grade 8, and grow grades 4-8 substantially using the curated words as
+   calibration anchors for a computed difficulty model over a licensed vocabulary source. Commit with
+   a notices file recording what came from where.
 5. **Audio pipeline.** Build-time fetch, transcode, attribution generation. Speech-synthesis
    fallback first so the game works before the corpus exists.
 6. **Spelling game**, including the blacklist button.
