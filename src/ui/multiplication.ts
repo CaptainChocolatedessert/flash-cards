@@ -22,6 +22,7 @@ import {
   submit,
 } from "../game/index.js";
 import type { Session, SessionConfig, SessionOutcome } from "../game/index.js";
+import { celebration, emojiEnabled, emojiToggle, randomEmoji } from "./celebrate.js";
 import { markPlayed, withSubject } from "../storage/index.js";
 import type { Keystroke, ProgressRecord, ProgressStore } from "../storage/index.js";
 
@@ -57,6 +58,8 @@ interface AnswerFeedback {
   readonly typed: string;
   /** The fact as it was shown, so the answer has something to attach to. */
   readonly prompt: string;
+  /** Chosen when the answer was judged, so a re-render cannot reshuffle it. */
+  readonly emoji: string | null;
 }
 
 export class MultiplicationScreen {
@@ -79,6 +82,8 @@ export class MultiplicationScreen {
   #ended = false;
   /** True when the engine ran out of material, false when the child chose to stop. */
   #ranOut = false;
+  /** So the same silly picture never turns up twice running. */
+  #lastEmoji: string | null = null;
   /** Set once the session is closed. The summary reads this, not the live counters. */
   #outcome: SessionOutcome | null = null;
 
@@ -162,11 +167,18 @@ export class MultiplicationScreen {
       now,
     );
 
+    const emoji =
+      correct && emojiEnabled(this.#record.profile.id)
+        ? randomEmoji(Math.random, this.#lastEmoji ?? undefined)
+        : null;
+    if (emoji !== null) this.#lastEmoji = emoji;
+
     this.#lastAnswer = {
       correct,
       expected: correctAnswer(question.itemId),
       typed,
       prompt: factPrompt(question.itemId, question.presentationRoll),
+      emoji,
     };
     this.#phase = "feedback";
     this.#render();
@@ -283,7 +295,7 @@ export class MultiplicationScreen {
       else void this.#conclude();
     });
 
-    header.append(who, score, stop);
+    header.append(who, score, emojiToggle(this.#record.profile.id, () => undefined), stop);
     return header;
   }
 
@@ -375,6 +387,7 @@ export class MultiplicationScreen {
 
     if (result.correct) {
       box.dataset["tone"] = "right";
+      if (result.emoji !== null) box.append(celebration(result.emoji));
       box.append(text("p", `${result.expected} — yes`));
       return box;
     }

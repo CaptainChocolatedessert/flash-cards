@@ -391,6 +391,22 @@ Two additions worth building:
 5!" has no equivalent when nothing unlocks. Replace it with milestones fired off the chart — a grade
 crossing 80%, a personal best — rather than letting the reward disappear.
 
+**A small down-payment on that is built**: a random silly emoji on a correct answer, behind a toggle
+in the question screen's header. It is decoration and touches nothing — not scheduling, not scoring,
+not the record. Two details are deliberate. The emoji are absurd rather than congratulatory, because
+a rocket and a party popper get old by the twentieth question while a hedgehog is still faintly funny
+at the hundredth — the joke is the randomness, not the praise. And the same one never appears twice
+running, since a repeat reads as a broken feature rather than a coincidence.
+
+The preference is per child, in `localStorage` rather than the record: it is a display setting, it
+means nothing on another device, and it should not travel in a backup. Per child rather than global
+because two children share the machine and one of them turning it off should not turn it off for the
+other.
+
+The toggle deliberately **does not re-render the screen** — in the spelling game that would restart
+the question and say the word again from the top — and it hands focus straight back to the answer
+box, which is the mistake this project has already made twice.
+
 ### Costs of dropping the cap
 
 Stated plainly, because the previous draft claimed the opposite as a benefit:

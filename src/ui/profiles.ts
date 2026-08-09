@@ -88,7 +88,7 @@ export class ProfileScreen {
     const heading = el("h1", "Flash Cards");
     const lede = el(
       "p",
-      "Times tables are ready to play. Spelling is not built yet. Progress is saved on this computer — use Export now and then, so it is not the only copy.",
+      "Times tables and spelling are both ready to play. Progress is saved on this computer — use Export now and then, so it is not the only copy.",
     );
     lede.className = "lede";
 

@@ -164,6 +164,41 @@ button.play {
   font-variant-numeric: tabular-nums;
 }
 
+/* Small and quiet: it is a toy, and it must not compete with Stop. */
+.emoji-toggle {
+  padding: 0.3rem 0.55rem;
+  line-height: 1;
+  font-size: 1.1rem;
+}
+
+.emoji-toggle[aria-pressed="false"] {
+  opacity: 0.45;
+}
+
+.celebration {
+  font-size: 4rem;
+  line-height: 1;
+  animation: pop 0.4s ease-out;
+}
+
+@keyframes pop {
+  from {
+    transform: scale(0.3) rotate(-15deg);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1) rotate(0);
+    opacity: 1;
+  }
+}
+
+/* Respect a system setting that asks for less movement. */
+@media (prefers-reduced-motion: reduce) {
+  .celebration {
+    animation: none;
+  }
+}
+
 .card {
   margin-top: 3rem;
   text-align: center;

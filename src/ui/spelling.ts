@@ -19,6 +19,7 @@ import {
 } from "../game/index.js";
 import type { Session, SessionConfig, SessionOutcome } from "../game/index.js";
 import type { Speaker } from "../audio/speech.js";
+import { celebration, emojiEnabled, emojiToggle, randomEmoji } from "./celebrate.js";
 import { markPlayed, withSubject } from "../storage/index.js";
 import type { Keystroke, ProgressRecord, ProgressStore } from "../storage/index.js";
 
@@ -39,6 +40,8 @@ interface AnswerFeedback {
   readonly correct: boolean;
   readonly expected: string;
   readonly typed: string;
+  /** Chosen when the answer was judged, so a re-render cannot reshuffle it. */
+  readonly emoji: string | null;
 }
 
 export class SpellingScreen {
@@ -59,6 +62,8 @@ export class SpellingScreen {
   #continueKey: AbortController | null = null;
   #ended = false;
   #ranOut = false;
+  /** So the same silly picture never turns up twice running. */
+  #lastEmoji: string | null = null;
 
   constructor({ store, root, record, speaker, onExit }: SpellingScreenOptions) {
     this.#store = store;
@@ -131,7 +136,13 @@ export class SpellingScreen {
       now,
     );
 
-    this.#lastAnswer = { correct, expected: question.itemId, typed };
+    const emoji =
+      correct && emojiEnabled(this.#record.profile.id)
+        ? randomEmoji(Math.random, this.#lastEmoji ?? undefined)
+        : null;
+    if (emoji !== null) this.#lastEmoji = emoji;
+
+    this.#lastAnswer = { correct, expected: question.itemId, typed, emoji };
     this.#phase = "feedback";
     this.#render();
 
@@ -229,7 +240,7 @@ export class SpellingScreen {
       else void this.#conclude();
     });
 
-    header.append(who, score, stop);
+    header.append(who, score, emojiToggle(this.#record.profile.id, () => undefined), stop);
     return header;
   }
 
@@ -350,6 +361,7 @@ export class SpellingScreen {
 
     if (result.correct) {
       box.dataset["tone"] = "right";
+      if (result.emoji !== null) box.append(celebration(result.emoji));
       box.append(text("p", result.expected));
       card.append(box);
       return card;
