@@ -20,6 +20,7 @@ import {
 import type { Session, SessionConfig, SessionOutcome } from "../game/index.js";
 import type { Speaker } from "../audio/speech.js";
 import { celebration, emojiEnabled, emojiToggle, randomEmoji } from "./celebrate.js";
+import { SETTLE_MS, continueControl } from "./continue.js";
 import { markPlayed, withSubject } from "../storage/index.js";
 import type { Keystroke, ProgressRecord, ProgressStore } from "../storage/index.js";
 
@@ -30,9 +31,6 @@ export interface SpellingScreenOptions {
   readonly speaker: Speaker;
   readonly onExit: () => void;
 }
-
-/** See the multiplication screen: a newly drawn screen ignores Enter for a moment. */
-const SETTLE_MS = 400;
 
 type Phase = "asking" | "feedback" | "over";
 
@@ -147,7 +145,6 @@ export class SpellingScreen {
     this.#render();
 
     await this.#persist(now);
-    if (correct) setTimeout(() => this.#next(), 700);
   }
 
   async #persist(now: number): Promise<void> {
@@ -366,6 +363,7 @@ export class SpellingScreen {
       // big picture landing on top of it pushes the answer off where they were
       // looking.
       if (result.emoji !== null) box.append(celebration(result.emoji));
+      box.append(this.#continue());
       card.append(box);
       return card;
     }
@@ -380,30 +378,18 @@ export class SpellingScreen {
           : `You wrote ${result.typed.trim()}. It will come round again.`,
       ),
     );
-
-    const go = document.createElement("button");
-    go.type = "button";
-    go.textContent = "Next";
-    go.addEventListener("click", () => this.#next());
-    box.append(go);
-    setTimeout(() => go.focus(), 0);
-
-    this.#stopContinueKey();
-    this.#continueKey = new AbortController();
-    const shownAt = Date.now();
-    document.addEventListener(
-      "keydown",
-      (event) => {
-        if (event.key !== "Enter") return;
-        if (Date.now() - shownAt < SETTLE_MS) return;
-        event.preventDefault();
-        this.#next();
-      },
-      { signal: this.#continueKey.signal },
-    );
+    box.append(this.#continue());
 
     card.append(box);
     return card;
+  }
+
+  /** The control that ends a feedback card — the same one whatever the answer was. */
+  #continue(): HTMLElement {
+    this.#stopContinueKey();
+    const { button, keys } = continueControl(() => this.#next());
+    this.#continueKey = keys;
+    return button;
   }
 
   #summary(): HTMLElement {

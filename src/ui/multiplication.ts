@@ -25,6 +25,7 @@ import {
 } from "../game/index.js";
 import type { Session, SessionConfig, SessionOutcome } from "../game/index.js";
 import { celebration, emojiEnabled, emojiToggle, randomEmoji } from "./celebrate.js";
+import { SETTLE_MS, continueControl } from "./continue.js";
 import { markPlayed, withSubject } from "../storage/index.js";
 import type { Keystroke, ProgressRecord, ProgressStore } from "../storage/index.js";
 
@@ -34,30 +35,6 @@ export interface MultiplicationScreenOptions {
   readonly record: ProgressRecord;
   readonly onExit: () => void;
 }
-
-/**
- * How long a newly drawn screen ignores Enter.
- *
- * Not a cosmetic delay — it is what stops one physical keypress from doing two
- * things. A keystroke handled on an element is still propagating to the document
- * while the next screen is being built, so a listener attached during that
- * handler receives the same keystroke; key repeat has the same effect a moment
- * later. Long enough to swallow both, short enough that nobody typing at speed
- * ever notices it.
- */
-const SETTLE_MS = 400;
-
-/** How long a right answer stays on screen before the next question. Just an acknowledgement. */
-const MOVE_ON_MS = 550;
-
-/**
- * The same, when the answer was right but too slow to count as remembered.
- *
- * Longer because there is a sentence to read that the quick case does not have,
- * and a message nobody has time to read is the same as no message — which would
- * leave a child watching facts refuse to move up for no visible reason.
- */
-const MOVE_ON_SLOW_MS = 1900;
 
 type Phase = "asking" | "feedback" | "over";
 
@@ -210,10 +187,6 @@ export class MultiplicationScreen {
     this.#render();
 
     await this.#persist(now);
-
-    // A right answer moves on by itself; a wrong one waits, so the correct
-    // product is on screen long enough to actually be read.
-    if (correct) setTimeout(() => this.#next(), fromMemory ? MOVE_ON_MS : MOVE_ON_SLOW_MS);
   }
 
   /**
@@ -438,6 +411,7 @@ export class MultiplicationScreen {
       // Below the answer, not above it. Same reason as the spelling game. It
       // shows either way: they were right, and that is worth the same picture.
       if (result.emoji !== null) box.append(celebration(result.emoji));
+      box.append(this.#continue());
       return box;
     }
 
@@ -451,41 +425,17 @@ export class MultiplicationScreen {
           : `You said ${result.typed.trim()}. It will come round again.`,
       ),
     );
-
-    const go = document.createElement("button");
-    go.type = "button";
-    go.textContent = "Next";
-    go.addEventListener("click", () => this.#next());
-    box.append(go);
-    setTimeout(() => go.focus(), 0);
-
-    // Enter carries on, from anywhere on the page rather than only from the
-    // focused button. The child has just typed an answer and their hands are
-    // still on the keyboard; making them find the mouse, or depend on where
-    // focus happens to be, would break the rhythm of the whole session.
-    this.#stopContinueKey();
-    this.#continueKey = new AbortController();
-    const shownAt = Date.now();
-    document.addEventListener(
-      "keydown",
-      (event) => {
-        if (event.key !== "Enter") return;
-        // Ignore anything that arrives too soon to have been a response to what
-        // is on screen. Two things land in that window and both would skip the
-        // answer the child is supposed to be reading:
-        //
-        //  - the very keystroke that submitted the answer. This listener is
-        //    attached while that keydown is still travelling up to the document,
-        //    so it is delivered here as well.
-        //  - key repeat, from a child holding Enter down.
-        if (Date.now() - shownAt < SETTLE_MS) return;
-        event.preventDefault();
-        this.#next();
-      },
-      { signal: this.#continueKey.signal },
-    );
+    box.append(this.#continue());
 
     return box;
+  }
+
+  /** The control that ends a feedback card — the same one whatever the answer was. */
+  #continue(): HTMLElement {
+    this.#stopContinueKey();
+    const { button, keys } = continueControl(() => this.#next());
+    this.#continueKey = keys;
+    return button;
   }
 
   #summary(): HTMLElement {

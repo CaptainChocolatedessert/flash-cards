@@ -744,8 +744,9 @@ Three consequences worth stating separately, because each is a decision:
 
 **It is still not scored invisibly.** The rule above — never show a clock in untimed mode, and never
 score against time silently — survives, and is satisfied *after* the answer rather than during it. A
-slow right answer carries the time and what to do about it, and stays on screen longer so the
-sentence can be read. No ticking clock is added to the low boxes: a timer running on a fact a child
+slow right answer carries the time and what to do about it, and the card waits for a keypress like
+every other, so there is as long to read it as they want. No ticking clock is added to the low
+boxes: a timer running on a fact a child
 is still learning applies pressure exactly where it does the most damage, and the box-4+ clock
 already covers the case where speed is the only thing left to improve.
 
@@ -1083,20 +1084,36 @@ close the session and write its summary. An earlier version only wrote a summary
 pressed Stop, which would have silently lost every session that simply ran to the end.
 
 **Enter is handled explicitly rather than through the form's implicit submission**, and likewise for
-carrying on from a wrong answer, which accepts Enter from anywhere on the page rather than only from
+carrying on from a feedback card, which accepts Enter from anywhere on the page rather than only from
 the focused button. Enter is how this game is played — a number and a return, hundreds of times a
 session — and it is not worth leaving to a browser default that quietly does not fire in some
 contexts. It also means the rhythm never depends on where focus happens to be.
 
-**A wrong answer waits for the child; a right one moves on by itself** after about half a second.
-The correct product stays on screen with the fact still above it, so the answer has something to
-attach to.
+**Every answer waits for the child, right or wrong.** Changed 2026-08-10 at the user's direction,
+from a version where only a wrong answer waited and a right one moved on by itself after about half
+a second.
+
+The original reasoning was that a right answer has nothing to read. It has: the word or the product
+is on screen, and there is a silly picture to enjoy. Half a second is enough to register that
+something happened and not enough to *look* at it, so the moment was being spent rather than given —
+and for a fact that was right but too slow to move up, there is now a sentence to read as well.
+
+Two things follow from making it uniform. The rhythm of the game becomes one thing instead of two,
+so nothing is ever whipped away mid-glance and there is no rule for a child to learn about which
+kinds of answer they are allowed to look at. And the timing constants that used to decide how long
+each kind of card lingered are gone entirely, along with the question of what they should be.
+
+The cost is one keypress per question — the same keypress they just made to answer.
+
+**The "Next" control is one shared piece**, used by both games and by both outcomes: the button, the
+Enter-from-anywhere listener, and the settle delay below. It was duplicated in the two screens
+before, which is exactly how the two would drift apart.
 
 **A newly drawn screen ignores Enter for a moment, and that is load-bearing.** Handling Enter
 explicitly created a way for one physical keypress to do two things: the keystroke that submits an
 answer is still travelling up to the document while the next screen is being built, so the listener
 attached during that handler receives the very same keystroke — and a wrong answer was dismissed the
-instant it appeared, which is the one thing stopping on a wrong answer exists to prevent. Key repeat
+instant it appeared, which is the one thing stopping on an answer exists to prevent. Key repeat
 from a child holding Enter down does the same a moment later. Both are handled by ignoring Enter for
 a few hundred milliseconds after a screen is drawn, from both directions: the feedback card will not
 be dismissed that soon, and an *empty* answer will not be submitted that soon. A deliberate blank
