@@ -63,6 +63,16 @@ export interface SessionConfig {
    * toward meaninglessness. See DESIGN.md, "Typing speed as a goal".
    */
   readonly tracksTyping?: boolean;
+  /**
+   * How long a correct answer to an item may take and still move it up a box.
+   *
+   * Supplied by multiplication, where the whole point is recall from memory and
+   * a product worked out laboriously is not yet known. Absent for spelling,
+   * where time is reported and never scheduled on — a slow speller may be a slow
+   * typist, and that is a motor-skill problem that has no business in the
+   * learning signal. See DESIGN.md, "Timed and untimed".
+   */
+  fluencyLimitMs?(itemId: string): number;
 }
 
 export interface Question {
@@ -287,12 +297,14 @@ export function advance(session: Session, config: SessionConfig, now: number): S
 /**
  * Fold one answer in: scheduling, proficiency, and the archive.
  *
- * The three are deliberately driven off different things. The box moves on
- * correctness alone — never on time. The estimator reads *only* first exposures,
- * because once an item is in the box system its result says something about that
- * item's rehearsal state rather than about ability on unseen ones. The archive
- * takes everything, including the keystroke timeline, which nothing interprets
- * yet and which cannot be recovered later if it is not recorded now.
+ * The three are deliberately driven off different things. The box moves down on
+ * correctness alone, and moves up on correctness plus — where the subject asks
+ * for it — being quick enough to have remembered rather than worked it out. The
+ * estimator reads *only* first exposures, and reads them on correctness alone:
+ * it answers "would this child get an unseen item right", which a slow right
+ * answer still is. The archive takes everything, including the keystroke
+ * timeline, which nothing interprets yet and which cannot be recovered later if
+ * it is not recorded now.
  */
 export function submit(
   session: Session,
@@ -313,9 +325,14 @@ export function submit(
     elapsedMs: response.elapsedMs,
   };
 
+  const fluencyLimit = config.fluencyLimitMs?.(question.itemId) ?? null;
+
   let progress: SubjectProgress = {
     ...session.progress,
-    items: { ...session.progress.items, [question.itemId]: applyAttempt(state, attempt) },
+    items: {
+      ...session.progress.items,
+      [question.itemId]: applyAttempt(state, attempt, fluencyLimit),
+    },
   };
 
   if (question.firstExposure) {

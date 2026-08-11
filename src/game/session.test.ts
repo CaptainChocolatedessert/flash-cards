@@ -13,7 +13,13 @@ import { newRecord } from "../storage/index.js";
 import type { SubjectProgress } from "../storage/index.js";
 import { advance, endSession, startSession, submit, typingSpeed } from "./session.js";
 import type { Response, Session, SessionConfig } from "./session.js";
-import { correctAnswer, isCorrect, multiplicationDeck } from "./multiplication.js";
+import {
+  answeredFromMemory,
+  correctAnswer,
+  isCorrect,
+  multiplicationDeck,
+  multiplicationFluencyLimitMs,
+} from "./multiplication.js";
 
 const T0 = Date.parse("2026-09-01T12:00:00Z");
 const DAY = 24 * 60 * 60 * 1000;
@@ -142,6 +148,55 @@ describe("answering", () => {
     expect(session.progress.items[itemId]?.box).toBe(1);
     expect(session.queue).toContain(itemId);
     expect(session.correct).toBe(0);
+  });
+
+  it("holds a right-but-slow answer where it is when the subject gates on speed", () => {
+    const cfg: SessionConfig = { ...config(), fluencyLimitMs: multiplicationFluencyLimitMs };
+    let session = advance(startSession(emptyProgress(), T0), cfg, T0);
+    const itemId = session.current?.itemId ?? "";
+
+    session = submit(session, cfg, answer(true, { elapsedMs: 20_000 }), T0 + 20_000);
+
+    // No fast-track: the fact was worked out, not remembered.
+    expect(session.progress.items[itemId]?.box).toBe(1);
+    // Still a right answer everywhere else it is counted.
+    expect(session.correct).toBe(1);
+    expect(session.progress.items[itemId]?.timesCorrect).toBe(1);
+    // And not brought back within the session — that is what a miss earns, and
+    // an item re-asked five questions later would be measuring echo anyway.
+    expect(session.queue).not.toContain(itemId);
+  });
+
+  it("still tells the estimator a slow right answer was right", () => {
+    const cfg: SessionConfig = { ...config(), fluencyLimitMs: multiplicationFluencyLimitMs };
+    const session = advance(startSession(emptyProgress(), T0), cfg, T0);
+    const band = session.current?.band ?? "";
+    const before = predict(session.progress.proficiency, cfg.model, band);
+
+    const after = submit(session, cfg, answer(true, { elapsedMs: 20_000 }), T0 + 20_000);
+
+    // The estimator answers "would they get an unseen fact right", and a slow
+    // right answer is still a right one. Speed governs the box, not the chart.
+    expect(predict(after.progress.proficiency, cfg.model, band)).toBeGreaterThan(before);
+  });
+
+  it("leaves a subject with no fluency limit promoting on correctness alone", () => {
+    const cfg = config();
+    const session = advance(startSession(emptyProgress(), T0), cfg, T0);
+    const itemId = session.current?.itemId ?? "";
+
+    const after = submit(session, cfg, answer(true, { elapsedMs: 60_000 }), T0 + 60_000);
+
+    expect(after.progress.items[itemId]?.box).toBe(FAST_TRACK_BOX);
+  });
+
+  it("gives the screen the same verdict the scheduler used", () => {
+    // The feedback card decides what to say by calling this; the engine decides
+    // where the fact goes by calling the limit. They have to agree, or a child
+    // is told one thing and shown another.
+    const limit = multiplicationFluencyLimitMs("7x8");
+    expect(answeredFromMemory("7x8", limit)).toBe(true);
+    expect(answeredFromMemory("7x8", limit + 1)).toBe(false);
   });
 
   it("records the keystroke timeline and what was typed", () => {

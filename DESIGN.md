@@ -157,6 +157,9 @@ be learnable, far enough that it is recall rather than echo.
 
 Correct → up one box. Incorrect → **down to box 1**.
 
+For multiplication there is a third outcome: **correct but slow → stays put.** See "Multiplication
+promotes on speed as well as correctness". Spelling has only the two.
+
 Straight to box 1 rather than back one box is the classic Leitner rule and is the right default for
 spelling, where a misspelling is a genuine gap rather than a slip. **Flagged as tunable**: if it
 proves demoralising in practice, "back one box" is the gentler variant. Decide from observation, not
@@ -178,6 +181,12 @@ occasional wasted probe into an easy grade.
 It has a second role in the progression model: a first-exposure result is the *only* kind that
 carries information about a grade, so the fast-track and the proficiency estimator read the same
 event. Neither should be changed without checking the other.
+
+**For multiplication the fast-track requires a quick answer as well as a right one** — a fact worked
+out on first sight is not a fact already known, and the fast-track's whole justification is that it
+is. This is the one deliberate split between the fast-track and the estimator, which still counts a
+slow right answer as right; the reasoning is under "Multiplication promotes on speed as well as
+correctness".
 
 ---
 
@@ -641,6 +650,10 @@ So: **record what is observed, and infer nothing.** Did they get it right, and h
 
 ### Correctness schedules; time is only reported
 
+**Amended 2026-08-10 for multiplication only** — see "Multiplication promotes on speed as well as
+correctness" below. Everything in this subsection still holds for spelling, which is the subject it
+was written about.
+
 **Time never feeds the scheduler.** A word moves between boxes on whether it was spelled correctly
 and on nothing else. Elapsed time is a *reported metric* — shown to the kid, trended across sessions
 — with no influence on what gets asked next. That keeps a motor-skill problem out of the learning
@@ -698,6 +711,75 @@ mode switch anyone has to think about.
 One confound to stay alert to: for the younger kid, spelling accuracy will be entangled with typing
 ability regardless of mode. If that shows up, letter tiles or a click-to-build input is the remedy
 for the easiest words.
+
+### Multiplication promotes on speed as well as correctness
+
+**Decided 2026-08-10, at the user's direction.** The two subjects want different things from the
+clock, and the rule above — time is reported and never scheduled on — was written about spelling.
+
+**A times-table fact is only learned when it is *recalled*.** A child who arrives at 7×8 by counting
+up in sevens has answered correctly and has not memorised anything; the whole point of drilling the
+tables is to replace that computation with retrieval. So for multiplication, and only for
+multiplication:
+
+> **A correct answer moves the fact up a box only if it was quick. A correct-but-slow answer holds
+> the fact exactly where it is.**
+
+Three consequences worth stating separately, because each is a decision:
+
+- **It is a hold, not a demotion.** Nothing was answered wrongly, so nothing goes down. The fact
+  keeps its box and comes round again on that box's own interval — the same shape as the existing
+  "a timed miss does not demote" rule, arrived at from the other direction.
+- **It withholds the first-exposure fast-track.** A slow first answer holds the item at box 1, which
+  is where a new item already sits, so a fact worked out on first sight starts the ladder instead of
+  skipping it. This is the one place the change has real reach: the fast-track is what makes "no
+  placement test" viable, and it now requires fluency rather than mere correctness. That is the
+  intent — for an 8th grader who genuinely knows the tables, quick answers still clear the deck in
+  one pass, and for one who is still computing, the deck was never actually clear.
+- **The estimator is untouched.** A slow right answer is still recorded as *right* for the
+  proficiency chart, which answers "would this child get an unseen fact correct" — a question about
+  correctness. Speed governs the box; it does not govern the chart. This is the one place the
+  fast-track and the estimator, which DESIGN.md otherwise insists read the same event, deliberately
+  read it differently.
+
+**It is still not scored invisibly.** The rule above — never show a clock in untimed mode, and never
+score against time silently — survives, and is satisfied *after* the answer rather than during it. A
+slow right answer carries the time and what to do about it, and stays on screen longer so the
+sentence can be read. No ticking clock is added to the low boxes: a timer running on a fact a child
+is still learning applies pressure exactly where it does the most damage, and the box-4+ clock
+already covers the case where speed is the only thing left to improve.
+
+**Praise and a target, never a complaint.** Set 2026-08-10 at the user's direction, replacing a first
+draft that opened with "A bit slow". The wording is:
+
+> **Nice work — 4.1s. Now try to learn it by heart, so next time it comes straight off.**
+
+The child did the harder thing — they got there — and the useful instruction is the goal, not a
+fault. The elapsed time stays, as a plain fact rather than a verdict: it is what keeps the hold from
+being invisible, and it is the only signal of how close they were. The word "slow" does not appear
+anywhere on the screen.
+
+**The emoji still fires.** They were right, and the reward is for being right. Withholding it would
+turn a hold into a punishment, which is not what a hold is.
+
+#### Where the line is
+
+Not a flat number: `2500ms + 700ms per digit of the product after the first`. So 2×3 allows 2.5s,
+7×8 allows 3.2s, 12×12 allows 3.9s.
+
+The per-digit part is an allowance for typing, not for thinking. A flat limit would quietly penalise
+the large products — three digits to type where the small facts need one — and on a child's keyboard
+that is most of a second of pure motor work. Scaling it keeps the limit measuring memory rather than
+hand speed, which is the same reason multiplication is excluded from the typing-speed measure
+entirely.
+
+**Both numbers are guesses and both are knobs**, deliberately generous. The failure mode of a limit
+set too tight is a child who *does* know the fact watching it refuse to move up, and that is the kind
+of thing that makes someone stop playing. Being too loose costs a few extra reviews.
+
+**Not applied to spelling**, and it should not be. A slow speller may simply be a slow typist — that
+is precisely the motor-skill confound the original rule exists to keep out of the learning signal,
+and spelling has no equivalent of "recall versus compute" that speed cleanly separates.
 
 ---
 
@@ -906,8 +988,10 @@ that is the one place to look for a knob, and the numbers are deliberately not r
 - **`types.ts`** — the shared vocabulary. A box, a timing mode, one attempt, one item's scheduling
   state, and a band (a grade for spelling, a times table for multiplication).
 - **`scheduler.ts`** — the Leitner ladder. Box intervals, promotion and demotion, the first-exposure
-  fast-track, whether a question is asked against the clock, what is due now, where a missed item
-  goes back into the running session, and the box counts the governor and the readout both need.
+  fast-track, the optional speed gate on promotion (a limit the caller supplies per subject; absent
+  means promote on correctness alone), whether a question is asked against the clock, what is due
+  now, where a missed item goes back into the running session, and the box counts the governor and
+  the readout both need.
 - **`proficiency.ts`** — the estimator. The child's ability, each band's difficulty and residual, the
   predicted chance on an unseen item, and the interval around it. Also the two band sets: grades for
   spelling, times tables for multiplication.
@@ -984,8 +1068,11 @@ a right answer — is one small file beside it.
 
 The engine's shape: start a session from what is due, hand out one question at a time, take a result
 back, and close with a summary. The three things a result touches are driven off different inputs
-on purpose — the box moves on correctness alone and never on time, the estimator reads *only* first
-exposures, and the archive takes everything including the keystroke timeline.
+on purpose — the box moves down on correctness alone and up on correctness plus, where the subject
+asks for it, being quick enough to count as recalled; the estimator reads *only* first exposures and
+reads them on correctness alone; and the archive takes everything including the keystroke timeline.
+The speed gate is a per-subject function on the session config, supplied by multiplication and left
+out by spelling, so the engine itself still knows nothing about either.
 
 **The screen writes after every answer**, not at the end. Children close tabs; the record is a few
 kilobytes and the write is off the critical path, so the cost is invisible and the alternative is

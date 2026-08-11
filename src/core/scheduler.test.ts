@@ -12,6 +12,7 @@ import {
   nextDueAt,
   requeueMissed,
   timingMode,
+  wasFluent,
 } from "./scheduler.js";
 import type { AttemptResult, Box, ItemState } from "./types.js";
 
@@ -80,6 +81,79 @@ describe("promotion and demotion", () => {
   it("brings a retired item back if it is missed untimed", () => {
     const s = applyAttempt(at(newItem("x", T0), 6), attempt({ correct: false }));
     expect(s.box).toBe(1);
+  });
+});
+
+describe("the fluency gate on promotion", () => {
+  const LIMIT = 3000;
+
+  it("promotes as usual when no limit is given", () => {
+    const s = applyAttempt(at(newItem("x", T0), 2), attempt({ elapsedMs: 99_000 }));
+    expect(s.box).toBe(3);
+  });
+
+  it("holds a slow correct answer in its box rather than promoting it", () => {
+    const s = applyAttempt(at(newItem("x", T0), 3), attempt({ elapsedMs: LIMIT + 1 }), LIMIT);
+    expect(s.box).toBe(3);
+    // Still counted, and still rescheduled on its own interval.
+    expect(s.timesSeen).toBe(2);
+    expect(s.timesCorrect).toBe(1);
+    expect(s.dueAt).toBe(T0 + 3 * DAY);
+  });
+
+  it("does not demote it either — nothing was answered wrongly", () => {
+    const s = applyAttempt(at(newItem("x", T0), 5), attempt({ elapsedMs: 60_000 }), LIMIT);
+    expect(s.box).toBe(5);
+  });
+
+  it("promotes on the limit exactly", () => {
+    const s = applyAttempt(at(newItem("x", T0), 2), attempt({ elapsedMs: LIMIT }), LIMIT);
+    expect(s.box).toBe(3);
+  });
+
+  it("withholds the first-exposure fast-track from an item that was worked out", () => {
+    const s = applyAttempt(newItem("x", T0), attempt({ elapsedMs: LIMIT + 1 }), LIMIT);
+    // Box 1 is where a brand-new item already is, so holding leaves it at the
+    // bottom of the ladder — which is the right place for a fact that has to be
+    // memorised rather than recomputed.
+    expect(s.box).toBe(1);
+    expect(s.dueAt).toBe(T0);
+  });
+
+  it("still fast-tracks a first exposure answered quickly", () => {
+    const s = applyAttempt(newItem("x", T0), attempt({ elapsedMs: LIMIT - 1 }), LIMIT);
+    expect(s.box).toBe(FAST_TRACK_BOX);
+  });
+
+  it("leaves the demotion rules untouched", () => {
+    // A slow *wrong* answer is a wrong answer, and the gate has nothing to say.
+    const untimed = applyAttempt(
+      at(newItem("x", T0), 3),
+      attempt({ correct: false, elapsedMs: 60_000 }),
+      LIMIT,
+    );
+    expect(untimed.box).toBe(1);
+
+    const timed = applyAttempt(
+      at(newItem("x", T0), 4),
+      attempt({ correct: false, mode: "timed", elapsedMs: 60_000 }),
+      LIMIT,
+    );
+    expect(timed.box).toBe(4);
+  });
+
+  it("makes retirement require recall, not just correctness", () => {
+    let s = at(newItem("x", T0), 5);
+    s = applyAttempt(s, attempt({ elapsedMs: LIMIT + 500 }), LIMIT);
+    expect(isRetired(s)).toBe(false);
+    s = applyAttempt(s, attempt({ at: T0 + 21 * DAY, elapsedMs: 800 }), LIMIT);
+    expect(isRetired(s)).toBe(true);
+  });
+
+  it("agrees with wasFluent about where the line is", () => {
+    expect(wasFluent(attempt({ elapsedMs: LIMIT }), LIMIT)).toBe(true);
+    expect(wasFluent(attempt({ elapsedMs: LIMIT + 1 }), LIMIT)).toBe(false);
+    expect(wasFluent(attempt({ elapsedMs: 999_000 }), null)).toBe(true);
   });
 });
 

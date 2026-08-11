@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
+  FLUENT_BASE_MS,
+  FLUENT_PER_EXTRA_DIGIT_MS,
   allFacts,
   bandForFact,
   factId,
   factsInTable,
+  fluencyLimitMs,
   normaliseFact,
   parseFactId,
   present,
@@ -90,5 +93,30 @@ describe("presentation", () => {
     state = applyAttempt(state, { correct: true, mode: "untimed", at: 1000, elapsedMs: 800 });
     expect(state.itemId).toBe("4x9");
     expect(state.timesSeen).toBe(2);
+  });
+});
+
+describe("the fluency limit", () => {
+  it("allows more time for a longer product, and only for the product", () => {
+    // 2×3 is one digit, 4×9 two, 12×12 three. The extra allowance is typing,
+    // not thinking, so it is keyed on how much there is to type.
+    expect(fluencyLimitMs(normaliseFact(2, 3))).toBe(FLUENT_BASE_MS);
+    expect(fluencyLimitMs(normaliseFact(4, 9))).toBe(FLUENT_BASE_MS + FLUENT_PER_EXTRA_DIGIT_MS);
+    expect(fluencyLimitMs(normaliseFact(12, 12))).toBe(
+      FLUENT_BASE_MS + 2 * FLUENT_PER_EXTRA_DIGIT_MS,
+    );
+  });
+
+  it("does not depend on which way round the fact is shown", () => {
+    expect(fluencyLimitMs(normaliseFact(7, 8))).toBe(fluencyLimitMs(normaliseFact(8, 7)));
+  });
+
+  it("stays inside a few seconds across the whole table", () => {
+    // A sanity bound, not a finding: if a limit ever lands somewhere a child
+    // could count up to, the constants have drifted.
+    for (const fact of allFacts()) {
+      expect(fluencyLimitMs(fact)).toBeGreaterThanOrEqual(2000);
+      expect(fluencyLimitMs(fact)).toBeLessThanOrEqual(4500);
+    }
   });
 });

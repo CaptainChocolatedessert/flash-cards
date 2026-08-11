@@ -12,11 +12,13 @@ import { boxCounts } from "../core/index.js";
 import type { Box } from "../core/index.js";
 import {
   advance,
+  answeredFromMemory,
   correctAnswer,
   endSession,
   factPrompt,
   isCorrect,
   multiplicationDeck,
+  multiplicationFluencyLimitMs,
   multiplicationProficiencyModel,
   startSession,
   submit,
@@ -45,6 +47,18 @@ export interface MultiplicationScreenOptions {
  */
 const SETTLE_MS = 400;
 
+/** How long a right answer stays on screen before the next question. Just an acknowledgement. */
+const MOVE_ON_MS = 550;
+
+/**
+ * The same, when the answer was right but too slow to count as remembered.
+ *
+ * Longer because there is a sentence to read that the quick case does not have,
+ * and a message nobody has time to read is the same as no message — which would
+ * leave a child watching facts refuse to move up for no visible reason.
+ */
+const MOVE_ON_SLOW_MS = 1900;
+
 type Phase = "asking" | "feedback" | "over";
 
 /**
@@ -60,6 +74,9 @@ interface AnswerFeedback {
   readonly prompt: string;
   /** Chosen when the answer was judged, so a re-render cannot reshuffle it. */
   readonly emoji: string | null;
+  /** Quick enough to have been recalled rather than worked out. Only read when correct. */
+  readonly fromMemory: boolean;
+  readonly elapsedMs: number;
 }
 
 export class MultiplicationScreen {
@@ -98,6 +115,9 @@ export class MultiplicationScreen {
       // Not seeded: a real session wants genuinely varied presentation order.
       // The engine takes the source as an argument precisely so tests can pin it.
       rng: Math.random,
+      // Times tables are a memorisation game, so speed gates promotion here in a
+      // way it does not in spelling.
+      fluencyLimitMs: multiplicationFluencyLimitMs,
     };
     this.#session = startSession(record.subjects.multiplication, Date.now());
   }
@@ -154,6 +174,10 @@ export class MultiplicationScreen {
     this.#stopClock();
     const now = Date.now();
     const correct = isCorrect(question.itemId, typed);
+    const elapsedMs = now - this.#shownAt;
+    // The same verdict the engine is about to reach, read from the same
+    // definition — this only decides what the screen says about it.
+    const fromMemory = answeredFromMemory(question.itemId, elapsedMs);
 
     this.#session = submit(
       this.#session,
@@ -161,7 +185,7 @@ export class MultiplicationScreen {
       {
         correct,
         answer: typed,
-        elapsedMs: now - this.#shownAt,
+        elapsedMs,
         keystrokes: this.#keystrokes,
       },
       now,
@@ -179,6 +203,8 @@ export class MultiplicationScreen {
       typed,
       prompt: factPrompt(question.itemId, question.presentationRoll),
       emoji,
+      fromMemory,
+      elapsedMs,
     };
     this.#phase = "feedback";
     this.#render();
@@ -187,7 +213,7 @@ export class MultiplicationScreen {
 
     // A right answer moves on by itself; a wrong one waits, so the correct
     // product is on screen long enough to actually be read.
-    if (correct) setTimeout(() => this.#next(), 550);
+    if (correct) setTimeout(() => this.#next(), fromMemory ? MOVE_ON_MS : MOVE_ON_SLOW_MS);
   }
 
   /**
@@ -387,8 +413,31 @@ export class MultiplicationScreen {
 
     if (result.correct) {
       box.dataset["tone"] = "right";
-      if (result.emoji !== null) box.append(celebration(result.emoji));
       box.append(text("p", `${result.expected} — yes`));
+      // Right but worked out rather than remembered.
+      //
+      // Praise and a target, in that order, and not a word about being slow.
+      // The child did the harder thing — they got there — and the only useful
+      // next instruction is what to aim for, not what was wrong with the
+      // attempt. The time is stated as a plain fact rather than a verdict,
+      // because DESIGN.md's rule is that the clock is never scored invisibly:
+      // a fact that quietly refuses to move up is worse than one that says why.
+      //
+      // Said *after* the answer rather than shown as a clock during it — a timer
+      // running on a fact a child is still learning adds pressure exactly where
+      // it does the most harm.
+      if (!result.fromMemory) {
+        box.append(
+          text(
+            "p",
+            `Nice work — ${(result.elapsedMs / 1000).toFixed(1)}s. ` +
+              "Now try to learn it by heart, so next time it comes straight off.",
+          ),
+        );
+      }
+      // Below the answer, not above it. Same reason as the spelling game. It
+      // shows either way: they were right, and that is worth the same picture.
+      if (result.emoji !== null) box.append(celebration(result.emoji));
       return box;
     }
 

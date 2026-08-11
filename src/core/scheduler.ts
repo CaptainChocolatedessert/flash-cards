@@ -1,9 +1,11 @@
 /**
  * Leitner scheduling. See DESIGN.md, "The scheduler — Leitner boxes".
  *
- * Correctness moves items between boxes and nothing else does. Elapsed time is
- * carried on the attempt so it can be reported, but it never reaches a decision
- * here — the one place timing matters is that a timed miss does not demote.
+ * Correctness moves items *down*, and nothing else does. Moving *up* can also be
+ * gated on speed, by a per-subject fluency limit the caller supplies: see
+ * `applyAttempt`. Subjects that pass no limit — spelling — keep the original
+ * rule, where elapsed time is carried on the attempt for reporting and never
+ * reaches a decision here.
  */
 
 import type { AttemptResult, Box, ItemState, TimingMode } from "./types.js";
@@ -76,8 +78,23 @@ export function nextDueAt(box: Box, at: number): number | null {
   return days === null ? null : at + days * DAY_MS;
 }
 
-function nextBox(state: ItemState, attempt: AttemptResult): Box {
+/**
+ * Whether an answer was quick enough to count as recalled rather than worked out.
+ *
+ * `limitMs` of null means the subject does not gate on speed at all, which is
+ * the answer for spelling — see the module header.
+ */
+export function wasFluent(attempt: AttemptResult, limitMs: number | null): boolean {
+  return limitMs === null || attempt.elapsedMs <= limitMs;
+}
+
+function nextBox(state: ItemState, attempt: AttemptResult, limitMs: number | null): Box {
   if (attempt.correct) {
+    // Right, but worked out rather than remembered. The item holds where it is:
+    // no promotion, no fast-track, and no demotion either — the child was not
+    // wrong about anything. For a brand-new item "where it is" is box 1, which
+    // is exactly the ladder an unmemorised fact should be starting.
+    if (!wasFluent(attempt, limitMs)) return state.box;
     if (isFirstExposure(state)) return FAST_TRACK_BOX;
     return Math.min(state.box + 1, RETIRED_BOX) as Box;
   }
@@ -87,9 +104,19 @@ function nextBox(state: ItemState, attempt: AttemptResult): Box {
   return 1;
 }
 
-/** Fold one answer into an item's scheduling state. */
-export function applyAttempt(state: ItemState, attempt: AttemptResult): ItemState {
-  const box = nextBox(state, attempt);
+/**
+ * Fold one answer into an item's scheduling state.
+ *
+ * `fluencyLimitMs` is how long a correct answer may take and still promote the
+ * item. Null — the default, and what spelling passes — turns the gate off
+ * entirely and restores the pure correctness rule.
+ */
+export function applyAttempt(
+  state: ItemState,
+  attempt: AttemptResult,
+  fluencyLimitMs: number | null = null,
+): ItemState {
+  const box = nextBox(state, attempt, fluencyLimitMs);
   return {
     itemId: state.itemId,
     box,

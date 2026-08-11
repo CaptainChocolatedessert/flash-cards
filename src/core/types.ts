@@ -24,7 +24,13 @@ export interface AttemptResult {
   readonly mode: TimingMode;
   /** Epoch ms when the answer was submitted. */
   readonly at: number;
-  /** Wall time from question shown to answer submitted. Reported, never scheduled on. */
+  /**
+   * Wall time from question shown to answer submitted.
+   *
+   * Always reported. Scheduled on only where the subject asks for it — see
+   * `applyAttempt`'s fluency limit, which multiplication supplies and spelling
+   * does not.
+   */
   readonly elapsedMs: number;
 }
 

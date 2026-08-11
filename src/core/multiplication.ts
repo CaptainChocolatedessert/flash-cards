@@ -79,6 +79,45 @@ export function bandForFact(fact: Fact): string {
   return String(fact.b);
 }
 
+// ---------------------------------------------------------------------------
+// Fluency — how quick counts as remembered
+// ---------------------------------------------------------------------------
+
+/**
+ * Reading the question, recalling the product, and typing the first digit.
+ *
+ * The number that separates recall from computation. Counting up in sevens is
+ * not quick, and it is the thing this game exists to replace; a child who
+ * genuinely knows 7×8 answers well inside this. Deliberately generous — the cost
+ * of being too tight is a child who knows the fact watching it refuse to move
+ * up, which is the failure mode that makes people stop playing.
+ *
+ * A starting guess, and a knob. Both of these are.
+ */
+export const FLUENT_BASE_MS = 2500;
+
+/**
+ * Added per digit after the first.
+ *
+ * A flat limit would quietly punish the big products: 12×12 needs three digits
+ * typed where 2×3 needs one, and on a child's keyboard that is most of a second
+ * of pure motor work with no thinking in it. Scaling the allowance keeps the
+ * limit measuring memory rather than hand speed — the same reason the typing
+ * measure is kept out of multiplication entirely.
+ */
+export const FLUENT_PER_EXTRA_DIGIT_MS = 700;
+
+/**
+ * How long an answer to `fact` may take and still count as recalled.
+ *
+ * Keyed on the length of the *expected* product, not of what was typed: a child
+ * who types 7 for 7×8 was not slow because the answer was short.
+ */
+export function fluencyLimitMs(fact: Fact): number {
+  const digits = String(product(fact)).length;
+  return FLUENT_BASE_MS + (digits - 1) * FLUENT_PER_EXTRA_DIGIT_MS;
+}
+
 /** How a fact is shown. Presented in both orders; the scheduler never sees the difference. */
 export interface Presentation {
   readonly left: number;
