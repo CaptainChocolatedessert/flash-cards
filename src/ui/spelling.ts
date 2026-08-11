@@ -361,8 +361,11 @@ export class SpellingScreen {
 
     if (result.correct) {
       box.dataset["tone"] = "right";
-      if (result.emoji !== null) box.append(celebration(result.emoji));
       box.append(text("p", result.expected));
+      // Below the word, not above it: the spelling is what they came for, and a
+      // big picture landing on top of it pushes the answer off where they were
+      // looking.
+      if (result.emoji !== null) box.append(celebration(result.emoji));
       card.append(box);
       return card;
     }

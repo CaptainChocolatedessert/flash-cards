@@ -175,9 +175,13 @@ button.play {
   opacity: 0.45;
 }
 
+/* Last in the feedback box and much larger than the words above it: the reward
+   is the thing you look at, and the answer text is what you read on the way
+   down to it. Capped in vw so it cannot overflow a narrow phone. */
 .celebration {
-  font-size: 4rem;
+  font-size: clamp(4rem, 28vw, 8rem);
   line-height: 1;
+  margin-top: 0.75rem;
   animation: pop 0.4s ease-out;
 }
 
