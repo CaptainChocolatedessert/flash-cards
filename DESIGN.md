@@ -124,7 +124,9 @@ words are encountered.
 The kids should not need a dev server. Installing the PWA once gives them an offline app with a
 desktop icon, which is strictly better than a terminal window they have to remember to open.
 
-For development, `npm run dev` (Vite on :5173). If a double-clickable local launch is ever wanted
+For development, `npm run dev` (Vite on :5473 — the port is claimed centrally across the sibling
+projects, and the config refuses to start rather than drift to another number). If a
+double-clickable local launch is ever wanted
 anyway, a `start.cmd` that opens the browser and runs the dev server is a three-line file — but
 treat it as a fallback, not the plan.
 
