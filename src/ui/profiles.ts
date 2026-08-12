@@ -26,20 +26,24 @@ export interface ProfileScreenOptions {
   readonly root: HTMLElement;
   /** Start a game for this child. The app shell decides what that means. */
   readonly onPlay: (profileId: string, subject: SubjectId) => void;
+  /** Open the credits page. Optional so the screen still stands up on its own in tests. */
+  readonly onCredits?: () => void;
 }
 
 export class ProfileScreen {
   readonly #store: ProgressStore;
   readonly #root: HTMLElement;
   readonly #onPlay: (profileId: string, subject: SubjectId) => void;
+  readonly #onCredits: (() => void) | null;
   #profiles: ProfileSummary[] = [];
   #records = new Map<string, ProgressRecord>();
   #selected: string | null = null;
 
-  constructor({ store, root, onPlay }: ProfileScreenOptions) {
+  constructor({ store, root, onPlay, onCredits }: ProfileScreenOptions) {
     this.#store = store;
     this.#root = root;
     this.#onPlay = onPlay;
+    this.#onCredits = onCredits ?? null;
     this.#selected = localStorage.getItem(SELECTED_KEY);
   }
 
@@ -100,7 +104,28 @@ export class ProfileScreen {
     message.className = "message";
     this.#root.append(message);
 
+    if (this.#onCredits !== null) this.#root.append(this.#creditsFooter());
+
     void this.#renderStorageStatus();
+  }
+
+  /**
+   * The attribution link.
+   *
+   * Small and at the bottom, because no child needs it — but present on every
+   * visit, because the recordings are reused under licences that require the
+   * people who made them to be named wherever the work appears.
+   */
+  #creditsFooter(): HTMLElement {
+    const footer = document.createElement("footer");
+    footer.className = "credits-link";
+    const open = document.createElement("button");
+    open.type = "button";
+    open.className = "linkish";
+    open.textContent = "Credits and licences";
+    open.addEventListener("click", () => this.#onCredits?.());
+    footer.append(open);
+    return footer;
   }
 
   #profileSection(): HTMLElement {

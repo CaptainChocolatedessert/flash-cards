@@ -30,6 +30,18 @@ export interface SpellingScreenOptions {
   readonly record: ProgressRecord;
   readonly speaker: Speaker;
   readonly onExit: () => void;
+  /**
+   * Which recording this word will be said with, or null when it will be
+   * synthesised.
+   *
+   * The screen needs this for one reason only: the "I can't understand it"
+   * button has nothing to reject when a word is being synthesised, so it should
+   * not be offered. The `Speaker` itself stays narrow — the game still does not
+   * learn *how* a word is being said in order to say it.
+   */
+  readonly sourceFor?: (word: string) => string | null;
+  /** Remember that a recording was unintelligible. Shared across both children. */
+  readonly onBlockRecording?: (id: string) => Promise<void>;
 }
 
 type Phase = "asking" | "feedback" | "over";
@@ -48,6 +60,8 @@ export class SpellingScreen {
   readonly #speaker: Speaker;
   readonly #onExit: () => void;
   readonly #config: SessionConfig;
+  readonly #sourceFor: (word: string) => string | null;
+  readonly #onBlockRecording: (id: string) => Promise<void>;
 
   #record: ProgressRecord;
   #session: Session;
@@ -63,12 +77,24 @@ export class SpellingScreen {
   /** So the same silly picture never turns up twice running. */
   #lastEmoji: string | null = null;
 
-  constructor({ store, root, record, speaker, onExit }: SpellingScreenOptions) {
+  constructor({
+    store,
+    root,
+    record,
+    speaker,
+    onExit,
+    sourceFor,
+    onBlockRecording,
+  }: SpellingScreenOptions) {
     this.#store = store;
     this.#root = root;
     this.#record = record;
     this.#speaker = speaker;
     this.#onExit = onExit;
+    // Defaults that say "no recordings here". The screen is then exactly what it
+    // was before recordings existed, which is what the tests run against.
+    this.#sourceFor = sourceFor ?? ((): null => null);
+    this.#onBlockRecording = onBlockRecording ?? ((): Promise<void> => Promise.resolve());
     this.#config = {
       deck: spellingDeck(),
       model: spellingProficiencyModel(),
@@ -295,7 +321,7 @@ export class SpellingScreen {
       // ends — the same mistake as above. Clicking the button moves focus to
       // it, and a child listening to the repeat is typing the moment they
       // recognise the word, not once the voice has stopped.
-      this.#prompt(() => {
+      this.#prompt(asked, () => {
         input.focus();
         void this.#speaker.speak(asked);
       }),
@@ -333,7 +359,7 @@ export class SpellingScreen {
   }
 
   /** The speaker button. The word is never shown — that is the whole game. */
-  #prompt(onRepeat: () => void): HTMLElement {
+  #prompt(word: string, onRepeat: () => void): HTMLElement {
     const row = document.createElement("div");
     row.className = "say-row";
     const again = document.createElement("button");
@@ -344,7 +370,44 @@ export class SpellingScreen {
     // "answer", never "say it again", however focus happens to be sitting.
     again.addEventListener("click", onRepeat);
     row.append(again);
+
+    const reject = this.#rejectButton(word, onRepeat);
+    if (reject !== null) row.append(reject);
     return row;
+  }
+
+  /**
+   * "I can't understand it" — reject this recording and hear another.
+   *
+   * The recordings are volunteer-made and some of them are duds; without an
+   * escape hatch a single bad file makes a word permanently unanswerable. See
+   * DESIGN.md, "'I can't understand it' — the blacklist".
+   *
+   * Only offered when a *recording* is playing. A synthesised word has nothing
+   * to reject, and a button that visibly does nothing is worse than no button.
+   */
+  #rejectButton(word: string, onRepeat: () => void): HTMLButtonElement | null {
+    if (this.#sourceFor(word) === null) return null;
+
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "say-reject";
+    button.textContent = "🤔 I can't understand it";
+
+    button.addEventListener("click", () => {
+      const id = this.#sourceFor(word);
+      if (id === null) return;
+      void this.#onBlockRecording(id).then(() => {
+        // Deliberately no re-render: redrawing the screen restarts the question,
+        // which would say the word from the top and reset the state around it.
+        // The button removes itself when the last recording is gone, and the
+        // repeat handler already hands focus back to the answer box.
+        if (this.#sourceFor(word) === null) button.remove();
+        onRepeat();
+      });
+    });
+
+    return button;
   }
 
   #feedbackCard(): HTMLElement {

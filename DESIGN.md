@@ -837,6 +837,46 @@ precache.** Most of that corpus will never be reached by either child.
 **Store multiple recordings per word where Commons has them.** This is what makes the blacklist
 degrade gracefully instead of falling straight to synthesis.
 
+#### As built, 2026-08-12 — `scripts/fetch-audio.mjs`
+
+Three things came out differently from the plan above, all in the same direction:
+
+**Nothing is transcoded here, because Commons already did it.** Its TimedMediaHandler generates an
+MP3 derivative for every audio file and serves it, so the script asks for that URL instead of
+running a converter. The rule "transcoding is not optional" survives intact — what changed is who
+performs it, and the repo needs no ffmpeg and no binary dependency for it.
+
+**Coverage is far better than assumed.** A sample across the whole grade range hit a recording for
+every word tried, at ~17KB each. The list is 1,113 words rather than "a few thousand", so three
+recordings each lands near 55MB — inside the original estimate for a third of the assumed corpus.
+
+**Discovery is two passes, not a search.** English Wiktionary's naming convention makes accent and
+word both predictable — `En-us-cat.ogg` — so existence is asked by exact title, 25 at a time, which
+is cheap and unambiguous. Only Lingua Libre needs a search, because its filenames put the speaker in
+the middle (`LL-Q1860 (eng)-Vealhurl-water.wav`) and there is no prefix to ask for; those results
+are filtered against a strict pattern locally, since search matches loosely and hands back "water
+vapor" for "water".
+
+**Accent ordering is free where the filename carries it** — US first, then UK, GB, AU, CA, NZ — and
+unavailable where it does not. Lingua Libre encodes the speaker rather than their accent, and its
+speaker database is no longer queryable: lingualibre.org's wiki API serves an application shell as
+of 2026-08-11. Those recordings rank last with accent recorded as `unknown`. The user's instruction
+(2026-08-12) was not to worry much about accents, and this is what "not much" costs.
+
+**Politeness is a load-bearing feature, learned the hard way.** The first full run throttled its API
+calls and not its downloads, ran four-wide with no delay, and lost 2,452 of 2,476 files to HTTP 429
+in one burst. Both paths are now serialised, spaced, and retried with exponential backoff, honouring
+`Retry-After` when the server sends one. The API results are cached to a gitignored file so a re-run
+costs only the downloads it has not made — which is what turned that failure into a restart rather
+than starting over.
+
+#### Two files out, not one
+
+The fetcher writes a **tiny index** the app bundles — word, filename stem, how many recordings —
+and a **separate credits file** carrying author and licence for every single recording. The credits
+are a legal requirement and are far larger than the rest of the app; the credits page fetches them
+when someone opens it. Nobody should download three thousand attributions in order to spell "cat".
+
 ### "I can't understand it" — the blacklist
 
 The kid gets a button on any spoken word meaning *this recording is unintelligible*. The word is
@@ -849,6 +889,25 @@ simpler default; revisit if it causes friction.
 
 This feature exists because volunteer recordings *will* include some duds, and without an escape
 hatch a single bad file makes a word permanently unanswerable.
+
+**Built 2026-08-12**, alongside the recordings, which is when it first had anything to fall through
+to. Details that were decisions rather than mechanics:
+
+- **The button appears only when a recording is playing.** A synthesised word has nothing to reject,
+  and a visible control that does nothing when pressed is worse than no control.
+- **It is styled quieter than "say it again"**, which is the opposite of the usual instinct to make
+  a new button findable. Rejecting is the rarer thing to want, and a child who presses it out of
+  curiosity loses the human voice for that word.
+- **Pressing it does not re-render the screen.** Redrawing restarts the question — it would say the
+  word from the top and reset the state around it — so the button removes itself in place once the
+  last recording for that word is gone, and hands focus straight back to the answer box. This is the
+  third time that particular trap has been hit in this project.
+- **The clock is not restarted.** Consistent with "say it again", which also does not, and for the
+  same reason: rebasing the clock under a child who has already started typing would credit them
+  with the letters they typed before it existed. It does mean a rejected recording costs the child
+  some elapsed time, which is a fair complaint and would be fixed for both controls together.
+- **The id stored is the filename.** Stable across re-fetches for a given word and position, unique,
+  and readable in a backup file — which matters, because the blocked list travels in the export.
 
 ### Cloze sentences — the homophone answer
 
@@ -1247,19 +1306,21 @@ stored; nothing shows either yet.
    **Deliberately not done** (user's call — tune later, get the game working first): the Dolch recall
    errors are uncorrected and the grade-4-8 placements are unchecked. Both are recorded in
    `NOTICES.md`. Growing the corpus is open question 11.
-5. **Audio pipeline.** Half done. **Speech synthesis is built** (`src/audio/speech.ts`) behind a
-   one-method interface, so the game works with no corpus at all and recordings become an upgrade
-   rather than a prerequisite — which is exactly why this half was ordered first. It picks an English
-   voice, preferring one that lives on the device so the spelling game is not the one part of an
-   offline app that stops working without a network, and it never blocks the game: a synthesiser that
-   fails to report finishing is released after a few seconds rather than hanging the question.
-   **Still to do:** the build-time fetch of human recordings, transcode to MP3, and generated
-   attribution.
+5. **Audio pipeline.** Done. **Speech synthesis** (`src/audio/speech.ts`) sits behind a one-method
+   interface, so the game worked with no corpus at all and the recordings became an upgrade rather
+   than a prerequisite — which is exactly why this half was ordered first. It picks an English voice,
+   preferring one that lives on the device so the spelling game is not the one part of an offline app
+   that stops working without a network, and it never blocks the game: a synthesiser that fails to
+   report finishing is released after a few seconds rather than hanging the question.
+   **Human recordings** (`scripts/fetch-audio.mjs`, `src/audio/recordings.ts`) followed on
+   2026-08-12: up to three per word from Wikimedia Commons and Lingua Libre, MP3 transcodes taken
+   from Commons rather than made here, a bundled index and a separately-fetched credits file, and
+   the synthesiser behind all of it as the fallback for words with no recording *and* for any
+   recording that fails to play. See "As built" under Audio.
 6. **Spelling game.** Done (`src/ui/spelling.ts`) — the same session engine as multiplication with a
    different deck, the word spoken rather than shown, a large "say it again" button, and correct
-   characters per minute reported at the end of a session. **Not done: the blacklist button**, which
-   has nothing to do yet: it exists to fall through to the *next* recording, and with synthesis as
-   the only voice there is nothing to fall through to. It arrives with the recordings.
+   characters per minute reported at the end of a session. The **blacklist button** arrived with the
+   recordings on 2026-08-12, which is when it first had anything to fall through to.
 7. **Cloze sentences.** Last because it is the only part gated on a content-filtering problem, and
    the game is fully playable without it for every non-homophone word.
 8. **PWA** — manifest, service worker, `navigator.storage.persist()`, install prompt.

@@ -6,6 +6,11 @@ dist/
 dist-ssr/
 *.local
 
+# Audio fetch cache: what Commons said about each word, so a re-run does not
+# repeat thousands of API calls. Derived data — the recordings themselves and
+# their credits are committed, this is not.
+.audio-cache.json
+
 # Private operating notes for Claude — not project documentation.
 # Project docs live in README.md and DESIGN.md.
 CLAUDE.md

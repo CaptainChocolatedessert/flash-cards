@@ -275,6 +275,11 @@ input.answer-word {
 
 .say-row {
   margin: 0 0 2rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Big, because it is the only way to hear the question again and a child who
@@ -285,6 +290,16 @@ input.answer-word {
   border-radius: 0.5rem;
 }
 
+/* Deliberately quieter than "say it again". Rejecting a recording is the rarer
+   thing to want, and a child who mashes it out of curiosity loses the human
+   voice for that word. Findable, not inviting. */
+.say-reject {
+  font-size: 0.95rem;
+  padding: 0.5rem 0.9rem;
+  border-radius: 0.5rem;
+  color: var(--muted);
+}
+
 .boxes {
   list-style: none;
   padding: 0;
@@ -293,4 +308,48 @@ input.answer-word {
   gap: 0.25rem;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
+}
+
+/* --- credits ------------------------------------------------------------- */
+
+.credits-link {
+  margin-top: 3rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--edge);
+  text-align: center;
+}
+
+/* A button that reads as a link: it navigates rather than acts, and it must not
+   compete with anything a child is actually here to press. */
+button.linkish {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* Thousands of rows, so: small, dense, and scrollable in its own right rather
+   than making the whole page enormous. */
+.credits {
+  list-style: none;
+  padding: 0.5rem 0.75rem;
+  margin: 0;
+  max-height: 60vh;
+  overflow-y: auto;
+  border: 1px solid var(--edge);
+  border-radius: 0.5rem;
+  font-size: 0.85rem;
+  line-height: 1.7;
+}
+
+.credits li {
+  border-bottom: 1px solid var(--edge);
+  padding: 0.15rem 0;
+}
+
+.credits li:last-child {
+  border-bottom: none;
 }
