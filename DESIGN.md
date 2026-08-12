@@ -418,6 +418,44 @@ The toggle deliberately **does not re-render the screen** — in the spelling ga
 the question and say the word again from the top — and it hands focus straight back to the answer
 box, which is the mistake this project has already made twice.
 
+### The parade — collecting them over a session
+
+**Added 2026-08-12 at the user's request**, and it is the down-payment growing into something closer
+to what the ladder used to provide. Every right answer's emoji is kept for the rest of the session,
+and each new one throws a parade: it bounces into the feedback card exactly as before, then swoops
+down to the left edge of the screen and leads everything won so far across and off the right side.
+
+**A haul, not a set.** Repeats are kept — two octopuses are two right answers, and collapsing them
+would make a good session look shorter than it was. It is session-scoped and never persisted: the
+collection is the fun of one sitting, and a parade resuming from last Tuesday would be a different
+and stranger feature.
+
+Why it works now and would not have a week ago: the feedback card **waits for a keypress**. When a
+right answer vanished after half a second there was nowhere to put a three-second parade. That
+change paid for this one.
+
+Details that were decisions:
+
+- **The newest emoji leads.** The line travels rightward, so the leader is the rightmost, which
+  means the row is laid out oldest-first and shifted left by exactly the run behind the leader. That
+  arithmetic is the one part that decides whether the parade actually crosses the screen, so it is
+  pulled out as a pure function and tested without a browser.
+- **It marches low**, at about three-quarters of the way down, so it never crosses the answer the
+  child is reading.
+- **The emoji comes home.** It flies out of the card and the space is held open, then it fades back
+  in when the parade is over. The first build left the card with a hole in it, which reads as the
+  prize being taken away rather than taken for a lap.
+- **Longer lines take longer, within bounds.** Between 1.6 and 7 seconds, so a first win does not
+  crawl and a fiftieth does not hold the screen hostage. Pressing Next cancels whatever is crossing:
+  a parade belongs to the answer it was celebrating.
+- **The whole sequence is declared up front** rather than starting the march when the swoop's
+  `finish` event arrives. Animation events are delivered on a rendering frame, so anywhere frames
+  stop — a backgrounded tab — the flight would land and the march would never begin. Handing the
+  browser the entire timeline removes the moment where the effect depends on a callback arriving.
+- **Reduced motion means no parade at all**, not a smaller one. A screen-crossing line of emoji is
+  exactly what that setting is asking not to see; the bounce in the card is already suppressed by
+  the same query, so what is left is a still emoji, which is the honest answer.
+
 ### Costs of dropping the cap
 
 Stated plainly, because the previous draft claimed the opposite as a benefit:

@@ -19,7 +19,14 @@ import {
 } from "../game/index.js";
 import type { Session, SessionConfig, SessionOutcome } from "../game/index.js";
 import type { Speaker } from "../audio/speech.js";
-import { celebration, emojiEnabled, emojiToggle, randomEmoji } from "./celebrate.js";
+import {
+  EmojiParade,
+  POP_SETTLE_MS,
+  celebration,
+  emojiEnabled,
+  emojiToggle,
+  randomEmoji,
+} from "./celebrate.js";
 import { SETTLE_MS, continueControl } from "./continue.js";
 import { markPlayed, withSubject } from "../storage/index.js";
 import type { Keystroke, ProgressRecord, ProgressStore } from "../storage/index.js";
@@ -76,6 +83,8 @@ export class SpellingScreen {
   #ranOut = false;
   /** So the same silly picture never turns up twice running. */
   #lastEmoji: string | null = null;
+  /** Everything won this session, and the parade that shows it off. */
+  readonly #parade = new EmojiParade();
 
   constructor({
     store,
@@ -115,6 +124,8 @@ export class SpellingScreen {
 
   #next(): void {
     this.#stopContinueKey();
+    // A parade belongs to the answer it was celebrating.
+    this.#parade.cancel();
     this.#session = advance(this.#session, this.#config, Date.now());
     if (this.#session.current === null) {
       this.#ranOut = true;
@@ -164,13 +175,31 @@ export class SpellingScreen {
       correct && emojiEnabled(this.#record.profile.id)
         ? randomEmoji(Math.random, this.#lastEmoji ?? undefined)
         : null;
-    if (emoji !== null) this.#lastEmoji = emoji;
+    if (emoji !== null) {
+      this.#lastEmoji = emoji;
+      this.#parade.add(emoji);
+    }
 
     this.#lastAnswer = { correct, expected: question.itemId, typed, emoji };
     this.#phase = "feedback";
     this.#render();
+    this.#startParade();
 
     await this.#persist(now);
+  }
+
+  /**
+   * Let the new emoji bounce where it landed, then send it off to lead the line.
+   *
+   * The same handover as the times-tables screen, and for the same reason: the
+   * emoji arrives in the card exactly as it always has, and only then leaves.
+   */
+  #startParade(): void {
+    const node = this.#root.querySelector<HTMLElement>(".celebration");
+    if (node === null) return;
+    setTimeout(() => {
+      if (this.#phase === "feedback" && node.isConnected) this.#parade.run(node);
+    }, POP_SETTLE_MS);
   }
 
   async #persist(now: number): Promise<void> {
@@ -185,6 +214,7 @@ export class SpellingScreen {
   async #conclude(): Promise<void> {
     this.#speaker.cancel();
     this.#stopContinueKey();
+    this.#parade.cancel();
     if (this.#ended) {
       this.#phase = "over";
       this.#render();

@@ -203,6 +203,42 @@ button.play {
   }
 }
 
+/* --- the parade ---------------------------------------------------------- */
+
+/* Everything won so far, marching across behind the newest one. Purely
+   decorative: it covers the whole viewport, so it must never intercept a click
+   meant for the answer box or the Next button underneath it. */
+.parade-layer {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 50;
+}
+
+.parade-row {
+  position: absolute;
+  left: 0;
+  display: flex;
+  gap: 14px;
+  white-space: nowrap;
+  will-change: transform;
+}
+
+.parade-emoji {
+  font-size: 44px;
+  line-height: 1;
+}
+
+/* Animated from the card's position to the head of the line, so it is placed at
+   the origin and moved entirely by transform. */
+.parade-flyer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: top left;
+}
+
 .card {
   margin-top: 3rem;
   text-align: center;

@@ -24,7 +24,14 @@ import {
   submit,
 } from "../game/index.js";
 import type { Session, SessionConfig, SessionOutcome } from "../game/index.js";
-import { celebration, emojiEnabled, emojiToggle, randomEmoji } from "./celebrate.js";
+import {
+  EmojiParade,
+  POP_SETTLE_MS,
+  celebration,
+  emojiEnabled,
+  emojiToggle,
+  randomEmoji,
+} from "./celebrate.js";
 import { SETTLE_MS, continueControl } from "./continue.js";
 import { markPlayed, withSubject } from "../storage/index.js";
 import type { Keystroke, ProgressRecord, ProgressStore } from "../storage/index.js";
@@ -78,6 +85,8 @@ export class MultiplicationScreen {
   #ranOut = false;
   /** So the same silly picture never turns up twice running. */
   #lastEmoji: string | null = null;
+  /** Everything won this session, and the parade that shows it off. */
+  readonly #parade = new EmojiParade();
   /** Set once the session is closed. The summary reads this, not the live counters. */
   #outcome: SessionOutcome | null = null;
 
@@ -119,6 +128,9 @@ export class MultiplicationScreen {
 
   #next(): void {
     this.#stopContinueKey();
+    // A parade belongs to the answer it was celebrating. Whatever is still
+    // crossing goes when the next question is drawn.
+    this.#parade.cancel();
     this.#session = advance(this.#session, this.#config, Date.now());
     if (this.#session.current === null) {
       // Ran out of material — everything due is done and the governor will not
@@ -172,7 +184,10 @@ export class MultiplicationScreen {
       correct && emojiEnabled(this.#record.profile.id)
         ? randomEmoji(Math.random, this.#lastEmoji ?? undefined)
         : null;
-    if (emoji !== null) this.#lastEmoji = emoji;
+    if (emoji !== null) {
+      this.#lastEmoji = emoji;
+      this.#parade.add(emoji);
+    }
 
     this.#lastAnswer = {
       correct,
@@ -185,8 +200,25 @@ export class MultiplicationScreen {
     };
     this.#phase = "feedback";
     this.#render();
+    this.#startParade();
 
     await this.#persist(now);
+  }
+
+  /**
+   * Let the new emoji bounce where it landed, then send it off to lead the line.
+   *
+   * The delay is the whole point of the effect: it appears in the card as it
+   * always has, and only then leaves. Guarded on the phase because a child who
+   * hits Next inside half a second has moved on, and a parade for a question
+   * already gone would be celebrating nothing.
+   */
+  #startParade(): void {
+    const node = this.#root.querySelector<HTMLElement>(".celebration");
+    if (node === null) return;
+    setTimeout(() => {
+      if (this.#phase === "feedback" && node.isConnected) this.#parade.run(node);
+    }, POP_SETTLE_MS);
   }
 
   /**
@@ -222,6 +254,7 @@ export class MultiplicationScreen {
   async #conclude(): Promise<void> {
     this.#stopClock();
     this.#stopContinueKey();
+    this.#parade.cancel();
     if (this.#ended) {
       this.#phase = "over";
       this.#render();
